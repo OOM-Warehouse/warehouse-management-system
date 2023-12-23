@@ -8,12 +8,12 @@
     <div class="container">
         <div class="container mx-auto col-md-6" id="sale-order-form">
             <div id="header">
-                <h1 class="mt-3" th:text="|Update Sales Order: ${salesOrder.id}|">Update Sales Order</h1>
+                <h1 class="mt-3" th:text="|Update Sales Order: ${persistedOrder.id}|">Update Sales Order</h1>
             </div>
 
             <div id="updateSalesOrderForm">
                 <!-- SALE ORDER FORM -->
-                <form action="#" th:action="@{|/sales-orders/${salesOrder.id}/update|}" th:object="${salesOrder}"
+                <form action="#" th:action="@{|/sales-orders/${persistedOrder.id}/update|}" th:object="${salesOrder}"
                     method="post" class="row g-3 needs-validation" novalidate>
                     <!-- FROM/TO INPUTS FIELDS-->
                     <div class="col-md-6">
