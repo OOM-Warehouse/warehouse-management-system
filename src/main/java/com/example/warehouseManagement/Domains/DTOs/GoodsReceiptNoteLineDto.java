@@ -13,7 +13,6 @@ public class GoodsReceiptNoteLineDto {
     @Builder.Default
     private int qty = 0;
     @Builder.Default
-    private Long warehouseSectionId = 0L;
-    @Builder.Default
-    private int damaged = 0;
+    private Long warehouseSectionId = 1L;
+    private String notes;
 }
