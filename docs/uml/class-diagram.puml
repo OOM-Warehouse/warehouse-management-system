@@ -1,0 +1,334 @@
+@startuml class-diagram
+title Warehouse Management System - Domain, Service and Controller Classes
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "Domains (JPA entities)" {
+  abstract class Party <<MappedSuperclass>> {
+    - name : String
+    - street : String
+    - city : String
+    - state : String
+    - zipcode : String
+    - contactInfo : String
+    + {abstract} getPartyType() : String
+    + formattedAddress() : String
+    + formattedAddress(separator : String) : String
+  }
+  class Vendor {
+    - id : Long
+  }
+  class Customer {
+    - id : Long
+  }
+  Party <|-- Vendor
+  Party <|-- Customer
+
+  interface OrderLine
+  abstract class "AbstractOrder<L extends OrderLine>" as AbstractOrder <<MappedSuperclass>> {
+    + {abstract} getId() : Long
+    + {abstract} getLines() : List<L>
+    + {abstract} isModifiable() : boolean
+    + {abstract} getStatusLabel() : String
+    + {abstract} getCounterparty() : Party
+    + {abstract} getOrderType() : String
+    + getTotal() : double
+    + getTotalQty() : int
+  }
+
+  class SalesOrder {
+    - id : Long
+    - status : SoStatus
+    + markPartiallyShipped() : void
+    + markShipped() : void
+    + addLine(line : SalesOrderLine) : void
+    + addLine(item : Item, qty : int, price : ItemPrice) : SalesOrderLine
+    + removeLine(line : SalesOrderLine) : void
+  }
+  enum "SalesOrder.SoStatus" as SoStatus {
+    PENDING
+    PARTIALLY_SHIPPED
+    SHIPPED
+  }
+  class PurchaseOrder {
+    - id : Long
+    - status : PoStatus
+  }
+  AbstractOrder <|-- SalesOrder
+  AbstractOrder <|-- PurchaseOrder
+  AbstractOrder ..> OrderLine : uses
+  OrderLine <|.. SalesOrderLine
+  OrderLine <|.. PurchaseOrderLine
+
+  class SalesOrderLine {
+    - id : Long
+    - qty : int
+  }
+  class PurchaseOrderLine
+  class Item {
+    - id : Long
+    - sku : int
+    - description : String
+  }
+  class ItemPrice
+  class ItemCost
+  class Invoice {
+    - id : Long
+    - date : LocalDate
+  }
+  class InvoiceLine
+  class Backorder {
+    - id : Long
+    - qty : int
+    + changeQty(newQty : int) : void
+  }
+  class GoodsReceiptNote {
+    - id : Long
+    - date : LocalDate
+    - status : GrnStatus
+  }
+  class GoodsReceiptNoteLine
+
+  class PickingJob {
+    - id : Long
+    - date : LocalDate
+    - status : PjStatus
+    + markFulfilled() : void
+    + addLine(line : PickingJobLine) : void
+    + isPending() : boolean
+  }
+  enum "PickingJob.PjStatus" as PjStatus {
+    PENDING
+    FULFILLED
+  }
+  class PickingJobLine {
+    - id : Long
+    - qtyToPick : int
+    - qtyPicked : int
+  }
+
+  class Warehouse {
+    - id : Long
+    - address : String
+  }
+  class WarehouseSection {
+    - id : Long
+    - sectionNumber : String
+  }
+  class Stock {
+    - id : Long
+    - qtyOnHand : int
+  }
+  class StockAdjustment {
+    - id : Long
+    - qty : int
+    - adjustmentDate : LocalDate
+    - notes : String
+  }
+
+  class Shipment {
+    - id : Long
+    - trackingNumber : String
+    - carrier : String
+    - shippingMethod : ShippingMethod
+    - shippingCost : Double
+    - expectedDeliveryDate : LocalDate
+    - status : ShipmentStatus
+    - shipToAddress : String
+    - createdAt : LocalDateTime
+    - dispatchedAt : LocalDateTime
+    - deliveredAt : LocalDateTime
+    + {static} create(job : PickingJob, carrier : String, trackingNumber : String, method : ShippingMethod, expectedDeliveryDate : LocalDate) : Shipment
+    + {static} create(job : PickingJob, carrier : String, trackingNumber : String) : Shipment
+    + assignCarrier(carrier : String, trackingNumber : String) : void
+    + transitionTo(next : ShipmentStatus, location : String, description : String, occurredAt : LocalDateTime) : void
+    + applyShippingCost(cost : Double) : void
+    + getTrackingEvents() : List<TrackingEvent>
+    + getTotalUnits() : int
+    - addEvent(st : ShipmentStatus, when : LocalDateTime, location : String, description : String) : void
+  }
+  class TrackingEvent {
+    - id : Long
+    - status : ShipmentStatus
+    - timestamp : LocalDateTime
+    - location : String
+    - description : String
+  }
+  enum ShipmentStatus {
+    CREATED
+    PACKED
+    DISPATCHED
+    IN_TRANSIT
+    OUT_FOR_DELIVERY
+    DELIVERED
+    EXCEPTION
+    RETURNED
+    + getLabel() : String
+    + allowedNext() : Set<ShipmentStatus>
+    + canTransitionTo(next : ShipmentStatus) : boolean
+    + isTerminal() : boolean
+    + countsAsShipped() : boolean
+  }
+  enum ShippingMethod {
+    STANDARD
+    EXPRESS
+    OVERNIGHT
+  }
+
+  class User {
+    - id : Long
+    - username : String
+    - email : String
+    - role : Role
+    - enabled : boolean
+    - twoFactorEnabled : boolean
+  }
+  enum "User.Role" as Role {
+    USER
+    ADMIN
+  }
+  User --> Role
+}
+
+' composition (cascade ALL + orphanRemoval, see docs/RELATIONSHIPS.md)
+PurchaseOrder *-- "0..*" PurchaseOrderLine
+SalesOrder *-- "0..*" SalesOrderLine
+GoodsReceiptNote *-- "0..*" GoodsReceiptNoteLine
+Invoice *-- "0..*" InvoiceLine
+PickingJob *-- "0..*" PickingJobLine
+SalesOrder *-- "0..*" Backorder
+Item *-- "0..*" ItemPrice
+Item *-- "0..*" ItemCost
+Warehouse *-- "0..*" WarehouseSection
+Shipment *-- "0..*" TrackingEvent : trackingEvents
+
+' aggregation
+Vendor o-- "0..*" Item
+WarehouseSection o-- "0..*" Stock
+
+' association
+Vendor "1" -- "0..*" PurchaseOrder
+Customer "1" -- "0..*" SalesOrder
+Customer "1" -- "0..*" Invoice
+PurchaseOrder "1" -- "0..*" GoodsReceiptNote
+SalesOrder "1" -- "0..*" PickingJob
+SalesOrder "1" -- "0..*" Invoice
+Shipment "0..*" --> "1" SalesOrder
+Shipment "0..1" --> "1" PickingJob
+Stock "0..*" --> "1" Item
+PickingJobLine "0..*" --> "1" Item
+PickingJobLine "0..*" --> "0..1" WarehouseSection
+SalesOrderLine "0..*" --> "1" Item
+SalesOrderLine "0..*" --> "0..1" ItemPrice
+Backorder "0..*" --> "1" Item
+StockAdjustment "0..*" --> "1" Item
+StockAdjustment "0..*" --> "0..1" WarehouseSection : source
+StockAdjustment "0..*" --> "0..1" WarehouseSection : destination
+Shipment --> ShipmentStatus
+Shipment --> ShippingMethod
+TrackingEvent --> ShipmentStatus
+SalesOrder --> SoStatus
+PickingJob --> PjStatus
+
+package "Exceptions" {
+  abstract class ShipmentException
+  class InvalidShipmentDataException
+  class InvalidShipmentStatusTransitionException
+  class ShipmentNotAllowedException
+  class ShipmentNotFoundException
+  class InvalidPickException
+  class PickingJobAlreadyFulfilledException
+  ShipmentException <|-- InvalidShipmentDataException
+  ShipmentException <|-- InvalidShipmentStatusTransitionException
+  ShipmentException <|-- ShipmentNotAllowedException
+}
+Shipment ..> ShipmentNotAllowedException : throws
+Shipment ..> InvalidShipmentStatusTransitionException : throws
+Shipment ..> InvalidShipmentDataException : throws
+
+package "Services" {
+  interface ShipmentService {
+    + createShipment(pickingJobId : Long, carrier : String, trackingNumber : String, method : ShippingMethod, expectedDeliveryDate : LocalDate) : Shipment
+    + createShipment(pickingJobId : Long, carrier : String) : Shipment
+    + assignCarrier(shipmentId : Long, carrier : String, trackingNumber : String) : Shipment
+    + updateStatus(shipmentId : Long, next : ShipmentStatus, location : String, note : String, occurredAt : LocalDateTime) : Shipment
+    + dispatch(shipmentId : Long, location : String) : Shipment
+    + recordDelivery(shipmentId : Long, location : String, deliveredAt : LocalDateTime) : Shipment
+    + recordException(shipmentId : Long, location : String, reason : String) : Shipment
+    + recordReturn(shipmentId : Long, location : String, reason : String) : Shipment
+    + findByTrackingNumber(trackingNumber : String) : Shipment
+    + trackingHistory(shipmentId : Long) : List<TrackingEvent>
+    + findEligiblePickingJobs() : List<PickingJob>
+  }
+  class ShipmentServiceImpl {
+    - syncSalesOrderStatus(order : SalesOrder) : void
+    - generateTrackingNumber() : String
+  }
+  interface PickingJobService {
+    + findById(id : Long) : Optional<PickingJob>
+    + fulfill(pickingJob : PickingJob, pickingJobDto : PickingJobDto) : PickingJob
+    + countPending() : long
+  }
+  class PickingJobServiceImpl {
+    - syncBackorders(salesOrder : SalesOrder, lines : List<PickingJobLine>, remainderByItem : Map<Long, Integer>) : void
+  }
+  interface SalesOrderService {
+    + save(salesOrder : SalesOrder) : SalesOrder
+    + updateById(id : Long, salesOrder : SalesOrder) : SalesOrder
+    + findById(id : Long) : Optional<SalesOrder>
+  }
+  class SalesOrderServiceImpl
+  interface StockService {
+    + availableAt(warehouseSectionId : Long, itemId : Long) : int
+    + decreaseAt(warehouseSectionId : Long, itemId : Long, qty : int) : void
+    + pickStock(pickingJob : PickingJob) : void
+  }
+  class StockServiceImpl
+  interface BackorderService {
+    + findBySalesOrder(salesOrder : SalesOrder) : List<Backorder>
+  }
+  class BackorderServiceImpl
+  interface InvoiceService {
+    + createByPickingJob(pickingJob : PickingJob) : Invoice
+  }
+  class InvoiceServiceImpl
+  ShipmentService <|.. ShipmentServiceImpl
+  PickingJobService <|.. PickingJobServiceImpl
+  SalesOrderService <|.. SalesOrderServiceImpl
+  StockService <|.. StockServiceImpl
+  BackorderService <|.. BackorderServiceImpl
+  InvoiceService <|.. InvoiceServiceImpl
+  PickingJobServiceImpl ..> StockService : uses
+  PickingJobServiceImpl ..> InvalidPickException : throws
+  PickingJobServiceImpl ..> PickingJobAlreadyFulfilledException : throws
+}
+
+package "Controllers" {
+  class SalesOrderController <<@RequestMapping /sales-orders>> {
+    + saveSaleOrder(salesOrder : SalesOrder, request : HttpServletRequest, model : Model) : String
+  }
+  class PickingJobController <<@RequestMapping /picking-jobs>> {
+    + startPickingProcess(id : Long, model : Model) : String
+    + fulfillPickingJob(id : Long, pickingJobDto : PickingJobDto, model : Model) : String
+  }
+  class ShipmentController <<@RequestMapping /shipments>> {
+    + create(dto : NewShipmentDto, result : BindingResult) : String
+    + track(trackingNumber : String, model : Model) : String
+    + details(id : Long, model : Model) : String
+    + updateStatus(id : Long) : String
+    + assignCarrier(id : Long) : String
+  }
+  class ShipmentExceptionHandler <<@ControllerAdvice>>
+}
+SalesOrderController ..> SalesOrderService
+PickingJobController ..> PickingJobService
+PickingJobController ..> InvoiceService
+ShipmentController ..> ShipmentService
+ShipmentExceptionHandler ..> ShipmentException : handles
+ShipmentExceptionHandler ..> ShipmentNotFoundException : handles
+
+note bottom of ShipmentStatus
+  The state machine lives in the enum (allowedNext).
+  There is no separate strategy or factory class in the code.
+end note
+@enduml

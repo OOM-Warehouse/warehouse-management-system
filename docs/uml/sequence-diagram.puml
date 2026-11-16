@@ -1,0 +1,98 @@
+@startuml sequence-diagram
+title Order fulfilment: sales order to delivery
+autonumber
+actor "Warehouse User" as U
+participant SalesOrderController as SOC
+participant SalesOrderServiceImpl as SOS
+participant PickingJobController as PJC
+participant PickingJobServiceImpl as PJS
+participant StockServiceImpl as STK
+participant InvoiceServiceImpl as INV
+participant ShipmentController as SHC
+participant ShipmentServiceImpl as SHS
+participant Shipment as SH <<entity>>
+participant SalesOrder as SO <<entity>>
+database "Repositories" as R
+
+== Place order ==
+U -> SOC : POST /sales-orders/new (params save)
+SOC -> SOS : save(salesOrder)
+SOS -> R : salesOrderRepository.save(salesOrder)
+SOS -> R : pickingJobRepository.save(PickingJob for the order)
+SOS -> R : itemPriceRepository.findCurrentItemPriceByItemId(itemId)
+SOS -> R : pickingJobLineRepository.saveAll(lines with qtyToPick)
+SOS --> SOC : SalesOrder (status PENDING)
+SOC --> U : redirect /sales-orders?added
+
+== Picking, stock check, backorder ==
+U -> PJC : POST /picking-jobs/fulfill-job/{id} (PickingJobDto)
+PJC -> PJS : fulfill(pickingJob, pickingJobDto)
+alt job not pending
+  PJS --> PJC : throw PickingJobAlreadyFulfilledException
+  PJC --> U : redirect ?alreadyFulfilled
+else pending
+  loop each PickingJobLine
+    alt requested < 0 or requested > qtyToPick
+      PJS --> PJC : throw InvalidPickException
+    else valid
+      PJS -> STK : availableAt(sectionId, itemId)
+      PJS -> STK : decreaseAt(sectionId, itemId, picked)
+      note right of PJS : picked = min(requested, available)
+      PJS -> R : pickingJobLineRepository.save(line)
+    end
+  end
+  alt nothing picked at all
+    PJS --> PJC : throw InvalidPickException (transaction rolls back)
+    PJC --> U : redirect ?invalidPick
+  else something picked
+    PJS -> R : pickingJobRepository.save(job) after markFulfilled()
+    opt unpicked remainder (stock insufficient)
+      PJS -> R : pickingJobRepository.save(new PickingJob for remainder)
+      PJS -> R : backorderRepository.save(Backorder(salesOrder, item, qty))
+    end
+    PJS --> PJC : fulfilled PickingJob
+    PJC -> INV : createByPickingJob(pickingJob)
+    PJC --> U : redirect /picking-jobs?fulfilled
+  end
+end
+
+== Shipment created and dispatched ==
+U -> SHC : POST /shipments/new (NewShipmentDto)
+SHC -> SHS : createShipment(pickingJobId, carrier, trackingNumber, method, expectedDeliveryDate)
+SHS -> R : pickingJobRepository.findById(pickingJobId)
+SHS -> R : shipmentRepository.existsByPickingJobId(id)
+SHS -> SH : Shipment.create(job, carrier, tracking, method, expectedDeliveryDate)
+note right of SH : status CREATED, first TrackingEvent added.\nThrows ShipmentNotAllowedException if job\nis not FULFILLED or picked nothing.
+SHS -> R : shipmentRepository.save(shipment)
+SHS --> SHC : Shipment
+
+U -> SHC : POST /shipments/{id}/status (PACKED)
+SHC -> SHS : updateStatus(id, PACKED, location, note, occurredAt)
+U -> SHC : POST /shipments/{id}/status (DISPATCHED)
+SHC -> SHS : updateStatus(id, DISPATCHED, location, note, occurredAt)
+SHS -> SH : transitionTo(DISPATCHED, location, note, occurredAt)
+SHS -> R : shipmentRepository.save(shipment)
+SHS -> SHS : syncSalesOrderStatus(salesOrder)
+SHS -> SO : markPartiallyShipped() or markShipped()
+
+== Tracking updated and delivered ==
+loop IN_TRANSIT, OUT_FOR_DELIVERY
+  U -> SHC : POST /shipments/{id}/status
+  SHC -> SHS : updateStatus(id, next, location, note, occurredAt)
+  SHS -> SH : transitionTo(next, ...)
+  note right of SH : illegal move -> InvalidShipmentStatusTransitionException
+end
+U -> SHC : POST /shipments/{id}/status (DELIVERED)
+SHC -> SHS : updateStatus(id, DELIVERED, location, note, occurredAt)
+SHS -> SH : transitionTo(DELIVERED, ...)
+SHS -> R : shipmentRepository.save(shipment)
+SHS -> R : shipmentRepository.findBySalesOrderIdOrderByCreatedAtAsc(orderId)
+SHS -> SO : markShipped() if shipped units >= ordered and no backorders
+SHS -> R : salesOrderRepository.save(order)
+SHS --> SHC : Shipment (DELIVERED)
+SHC --> U : redirect to shipment details
+
+U -> SHC : GET /shipments/track?trackingNumber=...
+SHC -> SHS : findByTrackingNumber(trackingNumber)
+SHS --> SHC : Shipment with TrackingEvents
+@enduml
