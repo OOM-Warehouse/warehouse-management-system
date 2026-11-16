@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:insert="~{fragments/header :: header}"></div>
+<div th:insert="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid px-4 py-3" style="max-width: 900px;">
+    <h1 class="my-3">Track a shipment</h1>
+
+    <form th:action="@{/shipments/track}" method="get" class="input-group mb-3">
+        <input type="text" class="form-control" name="trackingNumber" placeholder="Tracking number (TRK-...)"
+               th:value="${trackingNumber}" required>
+        <button class="btn btn-dark" type="submit"><i class="bi bi-search me-1"></i>Track</button>
+    </form>
+
+    <div th:if="${notFound}" class="alert alert-warning">No shipment matches that tracking number.</div>
+
+    <div th:if="${shipment != null}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h4 m-0" th:text="${shipment.trackingNumber}">TRK</h2>
+            <span class="badge bg-dark" th:text="${shipment.status.label}">Created</span>
+        </div>
+        <p class="text-muted" th:text="|${shipment.carrier} — ${shipment.shippingMethod}|">DHL</p>
+        <div th:replace="~{:: timeline(${shipment})}"></div>
+        <a class="btn btn-outline-dark" th:href="@{/shipments/{id}(id=${shipment.id})}">Open shipment</a>
+    </div>
+</div>
+
+<!-- Reusable chronological event list -->
+<div th:fragment="timeline(shipment)">
+    <ul class="list-group mb-3">
+        <li class="list-group-item" th:each="e : ${shipment.trackingEvents}">
+            <div class="d-flex justify-content-between">
+                <strong th:text="${e.status.label}">Created</strong>
+                <span class="text-muted small" th:text="${#temporals.format(e.timestamp, 'MMM dd, yyyy HH:mm')}">May 14</span>
+            </div>
+            <div th:text="${e.description}">Shipment created</div>
+            <div class="text-muted small" th:if="${e.location != null}"><i class="bi bi-geo-alt me-1"></i><span th:text="${e.location}"></span></div>
+        </li>
+    </ul>
+</div>
+
+<div th:insert="~{fragments/footer :: footer}"></div>
+</html>

@@ -106,6 +106,19 @@
                 <a class="nav-link" href="/picking-jobs"><i class="bi bi-list-check me-2"></i>Picking jobs</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#nav-shipments" role="button" aria-expanded="false">
+                    <span><i class="bi bi-truck-flatbed me-2"></i>Shipments</span>
+                    <i class="bi bi-chevron-down small"></i>
+                </a>
+                <div class="collapse submenu" id="nav-shipments">
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" href="/shipments">All shipments</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/shipments/new">New shipment</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/shipments/track">Track</a></li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#nav-adjustments" role="button" aria-expanded="false">
                     <span><i class="bi bi-sliders me-2"></i>Stock adjustments</span>
                     <i class="bi bi-chevron-down small"></i>
@@ -166,6 +179,7 @@
                 <li class="nav-item"><a class="nav-link text-white" href="/goods-receipt-notes"><i class="bi bi-receipt me-2"></i>Receipt notes</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="/put-aways/floor"><i class="bi bi-arrow-down-square me-2"></i>Put-away</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="/picking-jobs"><i class="bi bi-list-check me-2"></i>Picking jobs</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="/shipments"><i class="bi bi-truck-flatbed me-2"></i>Shipments</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="/reports/sales-order-by-customer"><i class="bi bi-bar-chart me-2"></i>Reports</a></li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')"><a class="nav-link text-white" href="/admin/users"><i class="bi bi-shield-lock me-2"></i>Admin</a></li>
             </ul>
