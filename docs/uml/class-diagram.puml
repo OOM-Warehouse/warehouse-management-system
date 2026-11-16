@@ -261,7 +261,6 @@ package "Services" {
     + findEligiblePickingJobs() : List<PickingJob>
   }
   class ShipmentServiceImpl {
-    - syncSalesOrderStatus(order : SalesOrder) : void
     - generateTrackingNumber() : String
   }
   interface PickingJobService {
@@ -292,6 +291,36 @@ package "Services" {
     + createByPickingJob(pickingJob : PickingJob) : Invoice
   }
   class InvoiceServiceImpl
+  interface ShippingStrategy <<Strategy>> {
+    + supports(method : ShippingMethod) : boolean
+    + calculateCost(units : int) : double
+    + estimateDeliveryDate(dispatchDate : LocalDate) : LocalDate
+  }
+  class StandardShippingStrategy
+  class ExpressShippingStrategy
+  class OvernightShippingStrategy
+  class ShippingStrategyFactory <<Factory>> {
+    + forMethod(method : ShippingMethod) : ShippingStrategy
+  }
+  class ShipmentStatusChangedEvent <<Event>> {
+    + getShipment() : Shipment
+    + getPrevious() : ShipmentStatus
+    + getCurrent() : ShipmentStatus
+  }
+  class ShipmentNotificationListener <<Observer>> {
+    + onStatusChanged(event : ShipmentStatusChangedEvent) : void
+  }
+  class SalesOrderShipmentSyncListener <<Observer>> {
+    + onStatusChanged(event : ShipmentStatusChangedEvent) : void
+  }
+  ShippingStrategy <|.. StandardShippingStrategy
+  ShippingStrategy <|.. ExpressShippingStrategy
+  ShippingStrategy <|.. OvernightShippingStrategy
+  ShippingStrategyFactory o-- ShippingStrategy
+  ShipmentServiceImpl ..> ShippingStrategyFactory : uses
+  ShipmentServiceImpl ..> ShipmentStatusChangedEvent : publishes
+  ShipmentNotificationListener ..> ShipmentStatusChangedEvent : listens
+  SalesOrderShipmentSyncListener ..> ShipmentStatusChangedEvent : listens
   ShipmentService <|.. ShipmentServiceImpl
   PickingJobService <|.. PickingJobServiceImpl
   SalesOrderService <|.. SalesOrderServiceImpl

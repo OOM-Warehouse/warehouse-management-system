@@ -5,7 +5,7 @@ Agreed plan: [`docs/audit/IMPLEMENTATION-PLAN.md`](audit/IMPLEMENTATION-PLAN.md)
 ## Assignment checklist
 
 - [x] Inventory operations work correctly and prevent invalid stock changes
-- [ ] Supplier management works (partial: no vendor service test)
+- [x] Supplier management works
 - [x] Purchase orders support complete and partial receiving
 - [x] Picking supports complete and partial fulfilment
 - [x] Backorders are generated correctly
@@ -14,12 +14,12 @@ Agreed plan: [`docs/audit/IMPLEMENTATION-PLAN.md`](audit/IMPLEMENTATION-PLAN.md)
 - [x] Encapsulation is demonstrated through controlled domain methods
 - [x] Inheritance and runtime polymorphism are demonstrated in actual workflows
 - [x] Association, aggregation and composition are justified and documented
-- [ ] SOLID principles have concrete code examples
-- [ ] At least two suitable design patterns are implemented and used
+- [x] SOLID principles have concrete code examples
+- [x] At least two suitable design patterns are implemented and used
 - [x] Exception handling works for invalid business operations
 - [x] All four UML diagrams are present and match the code
 - [x] Important unit and integration tests pass
-- [ ] README and OOM documentation are complete
+- [x] README and OOM documentation are complete
 - [ ] Final Maven build and application startup succeed
 
 ## Stage log

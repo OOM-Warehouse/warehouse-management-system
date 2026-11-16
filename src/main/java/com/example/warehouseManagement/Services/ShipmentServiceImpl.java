@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -14,9 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.warehouseManagement.Domains.PickingJob;
 import com.example.warehouseManagement.Domains.PickingJob.PjStatus;
-import com.example.warehouseManagement.Domains.SalesOrder;
-import com.example.warehouseManagement.Domains.SalesOrder.SoStatus;
-import com.example.warehouseManagement.Domains.SalesOrderLine;
 import com.example.warehouseManagement.Domains.Shipment;
 import com.example.warehouseManagement.Domains.ShipmentStatus;
 import com.example.warehouseManagement.Domains.ShippingMethod;
@@ -25,8 +23,10 @@ import com.example.warehouseManagement.Domains.Exceptions.DuplicateTrackingNumbe
 import com.example.warehouseManagement.Domains.Exceptions.ShipmentNotAllowedException;
 import com.example.warehouseManagement.Domains.Exceptions.ShipmentNotFoundException;
 import com.example.warehouseManagement.Repositories.PickingJobRepository;
-import com.example.warehouseManagement.Repositories.SalesOrderRepository;
 import com.example.warehouseManagement.Repositories.ShipmentRepository;
+import com.example.warehouseManagement.Services.shipping.ShipmentStatusChangedEvent;
+import com.example.warehouseManagement.Services.shipping.ShippingStrategy;
+import com.example.warehouseManagement.Services.shipping.ShippingStrategyFactory;
 
 @Service
 public class ShipmentServiceImpl implements ShipmentService {
@@ -37,15 +37,18 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
     private final PickingJobRepository pickingJobRepository;
-    private final SalesOrderRepository salesOrderRepository;
+    private final ShippingStrategyFactory strategyFactory;
+    private final ApplicationEventPublisher eventPublisher;
     private final SecureRandom random = new SecureRandom();
 
     public ShipmentServiceImpl(ShipmentRepository shipmentRepository,
                                PickingJobRepository pickingJobRepository,
-                               SalesOrderRepository salesOrderRepository) {
+                               ShippingStrategyFactory strategyFactory,
+                               ApplicationEventPublisher eventPublisher) {
         this.shipmentRepository = shipmentRepository;
         this.pickingJobRepository = pickingJobRepository;
-        this.salesOrderRepository = salesOrderRepository;
+        this.strategyFactory = strategyFactory;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -63,7 +66,12 @@ public class ShipmentServiceImpl implements ShipmentService {
                 ? generateTrackingNumber()
                 : normalise(trackingNumber);
         ensureTrackingNumberFree(tracking, null);
-        Shipment shipment = Shipment.create(job, carrier, tracking, method, expectedDeliveryDate);
+        ShippingStrategy strategy = strategyFactory.forMethod(method != null ? method : ShippingMethod.STANDARD);
+        LocalDate expected = expectedDeliveryDate != null
+                ? expectedDeliveryDate
+                : strategy.estimateDeliveryDate(LocalDate.now());
+        Shipment shipment = Shipment.create(job, carrier, tracking, method, expected);
+        shipment.applyShippingCost(strategy.calculateCost(shipment.getTotalUnits()));
         return shipmentRepository.save(shipment);
     }
 
@@ -91,9 +99,10 @@ public class ShipmentServiceImpl implements ShipmentService {
     public Shipment updateStatus(Long shipmentId, ShipmentStatus next, String location, String note,
                                  LocalDateTime occurredAt) throws ShipmentNotFoundException {
         Shipment shipment = findById(shipmentId);
+        ShipmentStatus previous = shipment.getStatus();
         shipment.transitionTo(next, location, note, occurredAt);
         Shipment saved = shipmentRepository.save(shipment);
-        syncSalesOrderStatus(saved.getSalesOrder());
+        eventPublisher.publishEvent(new ShipmentStatusChangedEvent(this, saved, previous, next));
         return saved;
     }
 
@@ -170,39 +179,6 @@ public class ShipmentServiceImpl implements ShipmentService {
         return shipmentRepository.findPickingJobsWithoutShipment(PjStatus.FULFILLED).stream()
                 .filter(pj -> pj.getPickingJobLines().stream().anyMatch(l -> l.getQtyPicked() > 0))
                 .toList();
-    }
-
-    /**
-     * Keeps the sales order status in step with its shipments. The order only ever moves
-     * forward (PENDING -> PARTIALLY_SHIPPED -> SHIPPED); a later return does not revert it.
-     */
-    private void syncSalesOrderStatus(SalesOrder order) {
-        if (order == null || order.getStatus() == SoStatus.SHIPPED) {
-            return;
-        }
-        int shippedQty = 0;
-        for (Shipment s : shipmentRepository.findBySalesOrderIdOrderByCreatedAtAsc(order.getId())) {
-            if (s.getStatus().countsAsShipped()) {
-                shippedQty += s.getTotalUnits();
-            }
-        }
-        if (shippedQty == 0) {
-            return;
-        }
-        int orderedQty = 0;
-        for (SalesOrderLine line : order.getSaleOrderLines()) {
-            orderedQty += line.getQty();
-        }
-        boolean complete = shippedQty >= orderedQty && order.getBackorders().isEmpty();
-        SoStatus target = complete ? SoStatus.SHIPPED : SoStatus.PARTIALLY_SHIPPED;
-        if (order.getStatus() != target) {
-            if (complete) {
-                order.markShipped();
-            } else {
-                order.markPartiallyShipped();
-            }
-            salesOrderRepository.save(order);
-        }
     }
 
     private void ensureTrackingNumberFree(String trackingNumber, Long ownShipmentId) {

@@ -40,6 +40,7 @@ Runtime (overriding):
 - `AbstractOrder.getTotal()` calls the abstract `getLines()`, which `SalesOrder` and `PurchaseOrder` implement differently; callers can treat both as `AbstractOrder<?>` and call `getStatusLabel()`, `isModifiable()`, `getOrderType()`.
 - `Vendor.getPartyType()` vs `Customer.getPartyType()`.
 - `ShipmentStatus.allowedNext()` selects behaviour per enum constant.
+- `ShippingStrategy.calculateCost` / `estimateDeliveryDate`: `ShipmentServiceImpl` calls the interface; the strategy picked by `ShippingStrategyFactory` decides the result at runtime (`ShippingStrategyTest`).
 
 ## Association, aggregation, composition
 Full tables in [RELATIONSHIPS.md](RELATIONSHIPS.md). Examples:
@@ -50,12 +51,16 @@ Full tables in [RELATIONSHIPS.md](RELATIONSHIPS.md). Examples:
 
 ## SOLID
 - S: controllers handle HTTP, `Services/*Impl` hold rules, `Repositories/*` do persistence; `Services/EmailServiceImpl.java` only sends mail.
-- O: a new order type extends `AbstractOrder` without touching `getTotal()`; transitions are added in `ShipmentStatus.allowedNext()` only.
+- O: a new shipping method is a new `ShippingStrategy` component, and a new reaction to a status change is a new `@EventListener`, with no change to `ShipmentServiceImpl`; a new order type extends `AbstractOrder` without touching `getTotal()`; transitions are added in `ShipmentStatus.allowedNext()` only.
 - L: `PurchaseOrder` / `SalesOrder` substitute for `AbstractOrder`, `Vendor` / `Customer` for `Party` (see the polymorphism tests).
 - I: small service interfaces per capability (`ShipmentService`, `StockAdjustmentService`, `SuggestionService`).
-- D: controllers depend on interfaces (`ShipmentService`); Spring injects `ShipmentServiceImpl`.
+- D: controllers depend on interfaces (`ShipmentService`); `ShipmentServiceImpl` depends on `ShippingStrategyFactory` and `ApplicationEventPublisher`. Spring injects the implementations. Full report: [SOLID-REPORT.md](SOLID-REPORT.md).
 
 ## Design patterns
+Details and file references: [DESIGN-PATTERNS.md](DESIGN-PATTERNS.md).
+- Strategy: `Services/shipping/ShippingStrategy` and three implementations (cost and delivery date per `ShippingMethod`), used by `ShipmentServiceImpl.createShipment`.
+- Factory: `Services/shipping/ShippingStrategyFactory.forMethod`.
+- Observer: `ShipmentStatusChangedEvent`, `ShipmentNotificationListener`, `SalesOrderShipmentSyncListener`.
 - State machine: `Domains/ShipmentStatus.java` (`allowedNext`, `canTransitionTo`, `isTerminal`), used by `Shipment.transitionTo`.
 - Template method: `AbstractOrder.getTotal()`.
 - Static factory: `Shipment.create(...)`.

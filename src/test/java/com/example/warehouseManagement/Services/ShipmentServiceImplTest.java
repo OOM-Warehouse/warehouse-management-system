@@ -14,6 +14,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
 import com.example.warehouseManagement.Domains.Customer;
 import com.example.warehouseManagement.Domains.Item;
@@ -27,20 +29,25 @@ import com.example.warehouseManagement.Domains.Shipment;
 import com.example.warehouseManagement.Domains.ShipmentStatus;
 import com.example.warehouseManagement.Domains.ShippingMethod;
 import com.example.warehouseManagement.Domains.Vendor;
+import com.example.warehouseManagement.Services.shipping.*;
 import com.example.warehouseManagement.Domains.Exceptions.DuplicateTrackingNumberException;
 import com.example.warehouseManagement.Domains.Exceptions.InvalidShipmentStatusTransitionException;
 import com.example.warehouseManagement.Domains.Exceptions.ShipmentNotAllowedException;
 import com.example.warehouseManagement.Domains.Exceptions.ShipmentNotFoundException;
 
 @DataJpaTest
+@RecordApplicationEvents
 @AutoConfigureTestDatabase(replace = Replace.NONE)
-@Import(ShipmentServiceImpl.class)
+@Import({ ShipmentServiceImpl.class, ShippingStrategyFactory.class, StandardShippingStrategy.class,
+        ExpressShippingStrategy.class, OvernightShippingStrategy.class, SalesOrderShipmentSyncListener.class })
 class ShipmentServiceImplTest {
 
     @Autowired
     private ShipmentService service;
     @Autowired
     private TestEntityManager em;
+    @Autowired
+    private ApplicationEvents events;
 
     /** Persists an order for orderedQty units and a picking job that picked pickedQty. */
     private PickingJob fixture(int orderedQty, int pickedQty, PjStatus status) {
@@ -232,5 +239,24 @@ class ShipmentServiceImplTest {
         assertThatThrownBy(() -> service.findById(424242L)).isInstanceOf(ShipmentNotFoundException.class);
         assertThatThrownBy(() -> service.findByTrackingNumber("NOPE")).isInstanceOf(ShipmentNotFoundException.class);
         assertThat(LocalDate.now()).isNotNull();
+    }
+
+    @Test
+    void createShipment_usesStrategyForCostAndExpectedDate() throws Exception {
+        PickingJob job = fixture(4, 4, PjStatus.FULFILLED);
+        Shipment s = service.createShipment(job.getId(), "DHL", null, ShippingMethod.EXPRESS, null);
+        assertThat(s.getShippingCost()).isEqualTo(19.0);
+        assertThat(s.getExpectedDeliveryDate()).isEqualTo(LocalDate.now().plusDays(2));
+    }
+
+    @Test
+    void statusChange_publishesEventAndListenerSyncsOrder() throws Exception {
+        PickingJob job = fixture(5, 5, PjStatus.FULFILLED);
+        Shipment s = service.createShipment(job.getId(), "DHL");
+        service.updateStatus(s.getId(), ShipmentStatus.PACKED, null, null, null);
+        service.dispatch(s.getId(), "Dock");
+        assertThat(events.stream(ShipmentStatusChangedEvent.class).map(ShipmentStatusChangedEvent::getCurrent))
+                .containsExactly(ShipmentStatus.PACKED, ShipmentStatus.DISPATCHED);
+        assertThat(service.findById(s.getId()).getSalesOrder().getStatus()).isEqualTo(SoStatus.SHIPPED);
     }
 }
