@@ -54,6 +54,11 @@ PlantUML sources (see [docs/uml/README.md](docs/uml/README.md) for how to render
 - [Class diagram](docs/uml/class-diagram.puml)
 - [Sequence diagram](docs/uml/sequence-diagram.puml)
 - [Activity diagram](docs/uml/activity-diagram.puml)
+- [State machine diagram](docs/uml/state-diagram.puml)
+
+Rendered images: [docs/uml/images/](docs/uml/images/)
+
+![Class diagram](docs/uml/images/class-diagram.png)
 
 ## Screenshots
 
@@ -214,7 +219,6 @@ See [docs/TESTING.md](docs/TESTING.md).
 - Seeded demo credentials are for development only.
 - Email falls back to console logging when SMTP is not configured.
 - No tax or carrier API integration; shipment status is updated manually.
-- UML files are PlantUML sources and need rendering with PlantUML.
 
 ## License
 

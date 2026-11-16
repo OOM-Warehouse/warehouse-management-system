@@ -1,0 +1,44 @@
+@startuml state-diagram
+' Shipment lifecycle state machine.
+' Source of truth: Domains/ShipmentStatus.allowedNext() / canTransitionTo(),
+' enforced by ShipmentServiceImpl.updateStatus(); every transition records a
+' TrackingEvent and publishes ShipmentStatusChangedEvent.
+title Shipment Status — State Machine Diagram
+
+hide empty description
+
+[*] --> CREATED : createShipment()
+
+CREATED --> PACKED
+PACKED --> DISPATCHED : dispatch\n/ SalesOrderShipmentSyncListener\nupdates sales order status
+
+DISPATCHED --> IN_TRANSIT
+DISPATCHED --> EXCEPTION
+
+IN_TRANSIT --> OUT_FOR_DELIVERY
+IN_TRANSIT --> EXCEPTION
+
+OUT_FOR_DELIVERY --> DELIVERED : record delivery
+OUT_FOR_DELIVERY --> EXCEPTION
+
+EXCEPTION --> IN_TRANSIT : resolved
+EXCEPTION --> OUT_FOR_DELIVERY : retry delivery
+EXCEPTION --> RETURNED : return to warehouse
+
+DELIVERED --> [*]
+RETURNED --> [*]
+
+state CREATED : label "Created"
+state PACKED : label "Packed"
+state DISPATCHED : label "Dispatched"\ncountsAsShipped
+state IN_TRANSIT : label "In transit"\ncountsAsShipped
+state OUT_FOR_DELIVERY : label "Out for delivery"\ncountsAsShipped
+state EXCEPTION : label "Delivery exception"\ncountsAsShipped
+state DELIVERED : label "Delivered"\nterminal, countsAsShipped
+state RETURNED : label "Returned"\nterminal
+
+note bottom of EXCEPTION
+  Any transition not listed in allowedNext()
+  is rejected with InvalidShipmentStatusTransitionException.
+end note
+@enduml
