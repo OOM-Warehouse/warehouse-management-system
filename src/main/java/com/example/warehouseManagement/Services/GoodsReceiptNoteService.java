@@ -57,6 +57,12 @@ public interface GoodsReceiptNoteService {
 
     public GoodsReceiptNote create(PurchaseOrder purchaseOrder);
 
+    /**
+     * Returns the open (PENDING) GRN of a purchase order, creating one with qty-0
+     * lines when none exists. Idempotent: repeated calls never pile up GRNs.
+     */
+    public GoodsReceiptNote findOrCreatePending(PurchaseOrder purchaseOrder);
+
     public GoodsReceiptNoteDto addGoodReceiptNoteLines(GoodsReceiptNote goodsReceiptNote);
 
     /** Dashboard KPI: count of pending GRNs. */

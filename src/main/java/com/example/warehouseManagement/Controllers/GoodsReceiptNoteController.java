@@ -21,6 +21,7 @@ import com.example.warehouseManagement.Domains.DTOs.AdvancedGrnSearchCriteria;
 import com.example.warehouseManagement.Domains.DTOs.GoodsReceiptNoteDto;
 import com.example.warehouseManagement.Domains.DTOs.PurchaseOrderNumberDto;
 import com.example.warehouseManagement.Domains.DTOs.TextMode;
+import com.example.warehouseManagement.Domains.Exceptions.GoodsReceiptNoteNotFoundException;
 import com.example.warehouseManagement.Services.GoodsReceiptNoteService;
 import com.example.warehouseManagement.Services.ItemService;
 import com.example.warehouseManagement.Services.PurchaseOrderService;
@@ -146,7 +147,7 @@ public class GoodsReceiptNoteController {
             // If purchase order is found, creates a new goods receipt note
             // and populates it with the goods receipt note data. Otherwise, redirects
             // to the goods receipt note list page with an error message.
-            GoodsReceiptNote goodsReceiptNote = goodsReceiptNoteService.create(purchaseOrder.get());
+            GoodsReceiptNote goodsReceiptNote = goodsReceiptNoteService.findOrCreatePending(purchaseOrder.get());
 
             GoodsReceiptNoteDto goodsReceiptNoteDto = goodsReceiptNoteService.addGoodReceiptNoteLines(goodsReceiptNote);
             // Updates the model with the goods receipt note DTO, the list of selected
@@ -171,9 +172,14 @@ public class GoodsReceiptNoteController {
             Model model) {
         // Retrieves the goods receipt note with the specified ID from the database.
         Optional<PurchaseOrder> purchaseOrder = purchaseOrderService.findById(id);
-        if (purchaseOrder.isPresent() && purchaseOrder.get().getStatus() == PoStatus.IN_TRANSIT) {
-            Optional<GoodsReceiptNote> goodsReceiptNote = goodsReceiptNoteService.findByPurchaseOrder(purchaseOrder.get().getId());
-            goodsReceiptNoteService.fulfill(goodsReceiptNote.get(), goodsReceiptNoteDto);
+        if (purchaseOrder.isPresent() && (purchaseOrder.get().getStatus() == PoStatus.IN_TRANSIT
+                || purchaseOrder.get().getStatus() == PoStatus.PARTIALLY_RECEIVED)) {
+            GoodsReceiptNote goodsReceiptNote = goodsReceiptNoteService.findByPurchaseOrder(purchaseOrder.get().getId())
+                    .orElseThrow(GoodsReceiptNoteNotFoundException::new);
+            // Invalid / duplicate receipts surface as exceptions handled by GlobalExceptionHandler
+            if (goodsReceiptNoteService.fulfill(goodsReceiptNote, goodsReceiptNoteDto) == null) {
+                return "redirect:/goods-receipt-notes/search-purchase-order?nothingReceived";
+            }
             return "redirect:/goods-receipt-notes/search-purchase-order?received";
         } else if (purchaseOrder.isPresent() && purchaseOrder.get().getStatus() == PoStatus.RECEIVED){
             return "redirect:/goods-receipt-notes/search-purchase-order?alreadyReceived";

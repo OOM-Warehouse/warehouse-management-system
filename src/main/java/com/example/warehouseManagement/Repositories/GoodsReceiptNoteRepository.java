@@ -17,19 +17,11 @@ public interface GoodsReceiptNoteRepository
 
     long countByStatus(GrnStatus status);
 
-    @Query(value = """
-        SELECT
-            goods_receipt_note.id AS "id",
-            goods_receipt_note.purchase_order_id AS "purchaseOrder",
-            goods_receipt_note.date AS "date",
-            goods_receipt_note.status AS "status"
-        FROM
-            goods_receipt_note
-            INNER JOIN purchase_order on goods_receipt_note.purchase_order_id = purchase_order.id
-        WHERE
-            purchase_order.id = :purchaseOrderNumber
-        """, nativeQuery = true)
-    Optional<GoodsReceiptNote> findByPurchaseOrder(@Param("purchaseOrderNumber") Long purchaseOrderNumber);
+    /** Oldest still-PENDING GRN of a purchase order (at most one is kept open by design). */
+    Optional<GoodsReceiptNote> findFirstByPurchaseOrderIdAndStatusOrderByIdAsc(Long purchaseOrderId, GrnStatus status);
+
+    /** Every GRN (pending and fulfilled) raised for a purchase order. */
+    List<GoodsReceiptNote> findAllByPurchaseOrderId(Long purchaseOrderId);
 
 
     @Query(value = """

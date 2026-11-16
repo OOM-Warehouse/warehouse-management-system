@@ -5,6 +5,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.example.warehouseManagement.Domains.Exceptions.CustomerNotFoundException;
+import com.example.warehouseManagement.Domains.Exceptions.GoodsReceiptAlreadyFulfilledException;
+import com.example.warehouseManagement.Domains.Exceptions.GoodsReceiptNoteNotFoundException;
+import com.example.warehouseManagement.Domains.Exceptions.InvalidReceiptQuantityException;
 import com.example.warehouseManagement.Domains.Exceptions.ItemNotFoundException;
 import com.example.warehouseManagement.Domains.Exceptions.PurchaseOrderNotFoundException;
 import com.example.warehouseManagement.Domains.Exceptions.ReceivedOrderModificationException;
@@ -64,6 +67,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ReceivedOrderModificationException.class)
     public String handleReceivedOrderModification() {
         return "redirect:/purchase-orders?cannotBeUpdated";
+    }
+
+    @ExceptionHandler(GoodsReceiptNoteNotFoundException.class)
+    public String handleGoodsReceiptNoteNotFound() {
+        return "redirect:/goods-receipt-notes/search-purchase-order?notFound";
+    }
+
+    @ExceptionHandler(GoodsReceiptAlreadyFulfilledException.class)
+    public String handleGoodsReceiptAlreadyFulfilled() {
+        return "redirect:/goods-receipt-notes/search-purchase-order?alreadyReceived";
+    }
+
+    @ExceptionHandler(InvalidReceiptQuantityException.class)
+    public String handleInvalidReceiptQuantity() {
+        return "redirect:/goods-receipt-notes/search-purchase-order?invalidQuantity";
     }
 
     /**

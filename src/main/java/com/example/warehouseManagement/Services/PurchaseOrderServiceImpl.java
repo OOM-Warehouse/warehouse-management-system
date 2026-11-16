@@ -223,12 +223,12 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             // Adding Goods receipt lines
             GoodsReceiptNoteLine goodsReceiptNoteLine = GoodsReceiptNoteLine.builder()
                     .goodsReceiptNote(savedGoodsReceiptNote)
-                    .qty(pol.getQty()).item(pol.getItem()).build();
+                    .qty(0).item(pol.getItem()).build();
             GoodsReceiptNoteLine savedGoodsReceiptNoteLine = goodsReceiptNoteLineRepository
                     .save(goodsReceiptNoteLine);
             savedGoodsReceiptNote.getGoodsReceiptNoteLines().add(savedGoodsReceiptNoteLine);
-            po.getGoodsReceiptNotes().add(savedGoodsReceiptNote);
         }
+        po.getGoodsReceiptNotes().add(savedGoodsReceiptNote);
         goodsReceiptNoteRepository.save(savedGoodsReceiptNote);
         purchaseOrderLineRepository.saveAll(po.getPurchaseOrderLines());
         return purchaseOrderRepository.save(po);

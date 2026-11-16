@@ -14,6 +14,18 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </div>
+        <div th:if="${param.invalidQuantity}">
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                Invalid received quantity (negative, or more than the quantity still outstanding on the order)
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        <div th:if="${param.nothingReceived}">
+            <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+                No quantities were received; nothing was changed
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
         <!-- ALERTS TO PROVIDE USER FEEDBACK ON NOT FOUND PO -->
         <div th:if="${param.notFound}">
             <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
