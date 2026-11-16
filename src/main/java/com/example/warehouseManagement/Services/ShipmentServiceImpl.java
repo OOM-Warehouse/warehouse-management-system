@@ -196,7 +196,11 @@ public class ShipmentServiceImpl implements ShipmentService {
         boolean complete = shippedQty >= orderedQty && order.getBackorders().isEmpty();
         SoStatus target = complete ? SoStatus.SHIPPED : SoStatus.PARTIALLY_SHIPPED;
         if (order.getStatus() != target) {
-            order.setStatus(target);
+            if (complete) {
+                order.markShipped();
+            } else {
+                order.markPartiallyShipped();
+            }
             salesOrderRepository.save(order);
         }
     }
