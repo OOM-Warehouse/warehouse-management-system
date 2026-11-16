@@ -20,7 +20,7 @@ Agreed plan: [`docs/audit/IMPLEMENTATION-PLAN.md`](audit/IMPLEMENTATION-PLAN.md)
 - [x] All four UML diagrams are present and match the code
 - [x] Important unit and integration tests pass
 - [x] README and OOM documentation are complete
-- [ ] Final Maven build and application startup succeed
+- [x] Final Maven build and application startup succeed (113 tests green; app started on port 8099, /login 200, /shipments 302 to login)
 
 ## Stage log
 
