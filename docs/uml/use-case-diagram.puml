@@ -1,0 +1,80 @@
+@startuml use-case-diagram
+title Warehouse Management System - Use Cases
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Administrator\n(User.Role.ADMIN)" as Admin
+actor "Warehouse User\n(User.Role.USER)" as Staff
+actor "Supplier / Vendor\n(external, no login)" as Supplier
+actor "Customer\n(external, no login)" as Customer
+
+note right of Supplier
+  External actor. Modelled in the system as the
+  Vendor entity (a Party); it never signs in.
+end note
+note right of Customer
+  External actor. Modelled as the Customer entity;
+  it never signs in. Orders are keyed in by staff.
+end note
+
+rectangle "Warehouse Management System" {
+  usecase "Log in (password + 2FA)" as UC_Login
+  usecase "Reset forgotten password" as UC_Reset
+  usecase "Manage users" as UC_Users
+
+  usecase "Manage items and prices" as UC_Items
+  usecase "Manage vendors" as UC_Vendors
+  usecase "Manage customers" as UC_Customers
+
+  usecase "Create purchase order" as UC_PO
+  usecase "Receive goods (GoodsReceiptNote)" as UC_GRN
+  usecase "Put away stock" as UC_PutAway
+  usecase "Adjust stock" as UC_Adjust
+
+  usecase "Place sales order" as UC_SO
+  usecase "Fulfil picking job" as UC_Pick
+  usecase "Manage backorders" as UC_Back
+  usecase "Create invoice" as UC_Inv
+  usecase "Create shipment" as UC_Ship
+  usecase "Update shipment status" as UC_Status
+  usecase "Track shipment" as UC_Track
+
+  usecase "View dashboard and reports" as UC_Report
+}
+
+Admin -- UC_Users
+Admin -- UC_Login
+Staff -- UC_Login
+Staff -- UC_Reset
+
+Staff -- UC_Items
+Staff -- UC_Vendors
+Staff -- UC_Customers
+Staff -- UC_PO
+Staff -- UC_GRN
+Staff -- UC_PutAway
+Staff -- UC_Adjust
+Staff -- UC_SO
+Staff -- UC_Pick
+Staff -- UC_Back
+Staff -- UC_Ship
+Staff -- UC_Status
+Staff -- UC_Track
+Staff -- UC_Report
+Admin -- UC_Report
+
+' /admin/** needs ADMIN, everything else needs any authenticated user
+Admin --|> Staff
+
+Supplier -- UC_PO : receives order
+Supplier -- UC_GRN : delivers goods
+Customer -- UC_SO : requests order
+Customer -- UC_Ship : receives goods
+
+UC_Pick ..> UC_Inv : <<include>>
+UC_Pick ..> UC_Back : <<extend>>\n[stock short]
+UC_Status ..> UC_Ship : <<include>>
+UC_Track ..> UC_Ship : <<include>>
+UC_GRN ..> UC_PutAway : <<extend>>
+UC_Login ..> UC_Reset : <<extend>>\n[forgot password]
+@enduml

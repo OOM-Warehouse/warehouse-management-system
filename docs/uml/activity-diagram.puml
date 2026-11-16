@@ -1,0 +1,55 @@
+@startuml activity-diagram
+title Order fulfilment lifecycle
+start
+:Warehouse user submits sales order\n(SalesOrderController.saveSaleOrder);
+:SalesOrderServiceImpl.save creates the order (PENDING)\nand a PickingJob with one line per order line;
+:Warehouse user opens the picking job and enters\nsection and quantity per line (PickingJobController);
+:PickingJobServiceImpl.fulfill(pickingJob, pickingJobDto);
+if (Job still PENDING?) then (no)
+  :throw PickingJobAlreadyFulfilledException;
+  stop
+endif
+if (Quantities valid?\n(0 <= picked <= qtyToPick, section exists)) then (no)
+  :throw InvalidPickException;
+  stop
+endif
+:For each line: picked = min(requested, StockService.availableAt);\nStockService.decreaseAt(section, item, picked);
+if (Anything picked at all?) then (no)
+  :throw InvalidPickException;\nrollback, job stays PENDING;
+  stop
+endif
+:job.markFulfilled();
+if (Some lines short? (stock insufficient)) then (yes - partial fulfilment)
+  :Create a new PickingJob for the remainder;
+  :syncBackorders: create or update Backorder(salesOrder, item, qty);
+else (no - full)
+  :Remove any existing Backorder for the fulfilled items;
+endif
+:InvoiceService.createByPickingJob for what was picked;
+:Warehouse user creates Shipment\n(ShipmentService.createShipment);
+if (Picking job FULFILLED, picked > 0,\nno shipment yet, tracking number free?) then (no)
+  :throw ShipmentNotAllowedException or InvalidShipmentDataException;
+  stop
+endif
+:Shipment CREATED -> PACKED -> DISPATCHED;
+:syncSalesOrderStatus: order PARTIALLY_SHIPPED or SHIPPED;
+repeat
+  :Update tracking: IN_TRANSIT -> OUT_FOR_DELIVERY\n(Shipment.transitionTo adds a TrackingEvent);
+  if (Delivery problem?) then (yes)
+    :Status EXCEPTION (recordException);
+    if (Retry delivery?) then (yes)
+    else (no)
+      :Status RETURNED (recordReturn);
+      stop
+    endif
+  endif
+repeat while (Not yet delivered?) is (yes) not (no)
+:Status DELIVERED, deliveredAt set;
+if (Shipped units >= ordered and no backorders?) then (yes)
+  :SalesOrder.markShipped();
+else (no)
+  :SalesOrder.markPartiallyShipped();
+  :Remainder awaits stock, then is picked via the backorder PickingJob;
+endif
+stop
+@enduml
