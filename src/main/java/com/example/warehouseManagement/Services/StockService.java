@@ -27,7 +27,23 @@ public interface StockService {
      */
     public List<StockLevelReportItemDto> findStockReportsItemsByVendorId(Long vendorId);
 
+    /**
+     * Deducts the picked quantities of a picking job from stock. Do NOT call this
+     * for a job that went through {@code PickingJobService.fulfill}, which already
+     * deducts stock itself.
+     */
     public void pickStock(PickingJob pickingJob);
+
+    /** Total quantity on hand of an item in one bin (sum over all stock rows). */
+    int availableAt(Long warehouseSectionId, Long itemId);
+
+    /**
+     * Removes qty units of an item from a bin, consuming rows oldest first and
+     * deleting rows that reach zero.
+     * @throws com.example.warehouseManagement.Domains.Exceptions.InvalidPickException
+     *         if qty is negative or exceeds the bin total (stock never goes negative)
+     */
+    void decreaseAt(Long warehouseSectionId, Long itemId, int qty);
 
     public List<Stock> findStocksOnFloor();
 

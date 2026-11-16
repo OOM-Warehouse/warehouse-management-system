@@ -32,4 +32,11 @@ public class Backorder {
     @ManyToOne
     @JoinColumn(name = "item_id")
     private Item item;
+
+    /** Sets the outstanding quantity; must not be negative. */
+    public void changeQty(int newQty) {
+        if (newQty < 0)
+            throw new IllegalArgumentException("Backorder quantity cannot be negative: " + newQty);
+        this.qty = newQty;
+    }
 }

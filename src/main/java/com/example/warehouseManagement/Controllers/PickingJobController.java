@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.example.warehouseManagement.Domains.PickingJob;
 import com.example.warehouseManagement.Domains.PickingJob.PjStatus;
+import com.example.warehouseManagement.Domains.PickingJobLine;
+import com.example.warehouseManagement.Domains.Exceptions.InvalidPickException;
+import com.example.warehouseManagement.Domains.Exceptions.PickingJobAlreadyFulfilledException;
 import com.example.warehouseManagement.Domains.DTOs.AdvancedPickingJobSearchCriteria;
 import com.example.warehouseManagement.Domains.DTOs.PickingJobDto;
 import com.example.warehouseManagement.Domains.DTOs.PickingJobLineDto;
@@ -113,12 +116,16 @@ public class PickingJobController {
         // If the picking job is found, creates a new picking job DTO and populates it
         // with the picking job data. Otherwise, redirects to the picking job list page
         // with an error message.
+        if (pickingJob.isPresent() && !pickingJob.get().isPending()) {
+            return "redirect:/picking-jobs?alreadyFulfilled";
+        }
         if (pickingJob.isPresent()) {
             PickingJobDto pickingJobDto = new PickingJobDto();
             pickingJobDto.setDate(pickingJob.get().getDate());
             pickingJobDto.setSalesOrderId(pickingJob.get().getSalesOrder().getId());
-            for (int i = 0; i < pickingJob.get().getPickingJobLines().size(); i++)
-                pickingJobDto.getPickingJobDtoLines().add(new PickingJobLineDto());
+            for (PickingJobLine line : pickingJob.get().getPickingJobLines())
+                pickingJobDto.getPickingJobDtoLines().add(
+                        PickingJobLineDto.builder().pickingJobLineId(line.getId()).build());
 
             // Updates the model with the picking job DTO, the warehouse sections,
             // the title, and the picking job.
@@ -152,13 +159,16 @@ public class PickingJobController {
         // If the picking job is found, fulfills it with the provided DTO. Otherwise,
         // redirects to the picking job list page with an error message.
         if (pickingJob.isPresent()) {
-            // Fulfill the picking job with the provided DTO
-            PickingJob updatedPickingJob = pickingJobService.fulfill(pickingJob.get(), pickingJobDto);
-            // Update stock levels after fulfilling the picking job
-            stockService.pickStock(updatedPickingJob);
-            // Create an invoice based on the picking job
-            invoiceService.createByPickingJob(pickingJob.get());
-            // Redirect to the picking job list page with an error message.
+            try {
+                // fulfill() also deducts stock and creates backorders, atomically
+                PickingJob updatedPickingJob = pickingJobService.fulfill(pickingJob.get(), pickingJobDto);
+                // Create an invoice for what was actually picked
+                invoiceService.createByPickingJob(updatedPickingJob);
+            } catch (PickingJobAlreadyFulfilledException e) {
+                return "redirect:/picking-jobs?alreadyFulfilled";
+            } catch (InvalidPickException e) {
+                return "redirect:/picking-jobs/fulfill-job/" + id + "?invalidPick";
+            }
             return "redirect:/picking-jobs?fulfilled";
         } else {
             // Redirect to the picking job list page with an error message.

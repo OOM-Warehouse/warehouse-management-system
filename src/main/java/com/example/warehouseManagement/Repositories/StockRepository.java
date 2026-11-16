@@ -18,6 +18,9 @@ import com.example.warehouseManagement.Domains.DTOs.TopFiveMoversDto;
 
 public interface StockRepository extends CrudRepository<Stock, Long> {
 
+  /** All stock rows for an item in one bin, oldest first (a bin may hold several rows). */
+  List<Stock> findByWarehouseSectionIdAndItemIdOrderByIdAsc(Long warehouseSectionId, Long itemId);
+
   /**
    * SELECT
    * item.sku AS "sku",

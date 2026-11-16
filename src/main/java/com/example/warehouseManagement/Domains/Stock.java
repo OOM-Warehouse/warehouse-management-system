@@ -31,4 +31,11 @@ public class Stock {
     private Item item;
     @Column(name = "qty_on_hand")
     private int qtyOnHand;
+
+    /** Removes qty units from this row; never lets the quantity go negative. */
+    public void decrease(int qty) {
+        if (qty < 0 || qty > qtyOnHand)
+            throw new IllegalArgumentException("Cannot remove " + qty + " from " + qtyOnHand + " on hand");
+        this.qtyOnHand -= qty;
+    }
 }
