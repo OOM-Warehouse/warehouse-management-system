@@ -100,7 +100,6 @@ public class PutAwayController {
             Model model) {
         Optional<WarehouseSection> warehouseSection = warehouseSectionService.findById(warehouseSectionId);
         if (warehouseSection.isPresent()) {
-            // System.out.printf("Warehouse Section Id: %d| Number: %s\n", warehouseSection.get().getId(), warehouseSection.get().getSectionNumber());
             List<Stock> stocks = stockService.findStocksByWareHouseSectionNumber(warehouseSection.get().getSectionNumber());
             if (wrapper != null) {
                 stockService.putAwayStocks(wrapper, stocks);

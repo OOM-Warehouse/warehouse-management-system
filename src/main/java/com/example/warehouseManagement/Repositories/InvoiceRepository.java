@@ -4,59 +4,11 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
 
 import com.example.warehouseManagement.Domains.Invoice;
-import com.example.warehouseManagement.Domains.DTOs.InvoiceDto;
 import com.example.warehouseManagement.Domains.DTOs.MonthlySalesDto;
 
 public interface InvoiceRepository extends CrudRepository<Invoice, Long> {
-
-    @Query(value = """
-        SELECT\s
-        i.id AS "id",\s
-        i.date AS "date",\s
-        i.id AS "invoiceNumber",\s
-        ROUND(SUM(invoice_line.qty * item_price.price), 2) AS "total"\s
-        FROM invoice i\s
-        INNER JOIN invoice_line ON invoice_line.invoice_id = i.id\s
-        INNER JOIN item_price ON invoice_line.item_id = item_price.item_id\s
-        GROUP BY i.\s
-        ORDER BY "date"\
-        """, nativeQuery = true)
-        public List<InvoiceDto> findAllInvoices();
-
-    @Query(value = """
-        SELECT\s
-        i.id AS "id",\s
-        i.date AS "date",\s
-        i.id AS "invoiceNumber",\s
-        ROUND(SUM(invoice_line.qty * item_price.price), 2) AS "total"\s
-        FROM invoice i\s
-        INNER JOIN invoice_line ON invoice_line.invoice_id = i.id\s
-        INNER JOIN item_price ON invoice_line.item_id = item_price.item_id\s
-        INNER JOIN customer ON i.customer_id = customer.id\s
-        WHERE i.customer_id = :customerId\s
-        GROUP BY i.\s
-        ORDER BY "date"\
-        """, nativeQuery = true)
-        public List<InvoiceDto> findAllInvoiceByCustomerId(@Param("customerId") Long customerId);
-
-        @Query(value = """
-        SELECT\s
-        i.id AS "id",\s
-        i.date AS "date",\s
-        i.id AS "invoiceNumber",\s
-        ROUND(SUM(invoice_line.qty * item_price.price), 2) AS "total"\s
-        FROM invoice i\s
-        INNER JOIN invoice_line ON invoice_line.invoice_id = i.id\s
-        INNER JOIN item_price ON invoice_line.item_id = item_price.item_id\s
-        WHERE so.date LIKE CONCAT(:year, '-', :month, '-', '0', '%')\s
-        GROUP BY i.\s
-        ORDER BY "date"\
-        """, nativeQuery = true)
-        public List<InvoiceDto> findByYearAndMonth(@Param("year") int year,
-        @Param("month") String month);
 
         @Query(value = """
              SELECT\s

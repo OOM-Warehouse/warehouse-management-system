@@ -25,7 +25,6 @@ import com.example.warehouseManagement.Domains.ItemCost;
 import com.example.warehouseManagement.Domains.ItemPool;
 import com.example.warehouseManagement.Domains.ItemPrice;
 import com.example.warehouseManagement.Domains.PickingJob;
-import com.example.warehouseManagement.Domains.PickingJob.PjStatus;
 import com.example.warehouseManagement.Domains.PickingJobLine;
 import com.example.warehouseManagement.Domains.PurchaseOrder;
 import com.example.warehouseManagement.Domains.PurchaseOrder.PoStatus;
@@ -190,8 +189,6 @@ public class Bootstrap implements CommandLineRunner {
                         .end(priceEnd).cost(itemInfo.getCost()).item(savedItem).build();
                 ItemPrice savedItemPrice = itemPriceRepository.save(itemPrice);
                 ItemCost savedItemCost = itemCostRepository.save(itemCost);
-                // salesPrices.add(savedItemPrice);
-                // costs.add(savedItemCost);
                 savedItem.getItemPrices().add(savedItemPrice);
                 savedItem.getItemCosts().add(savedItemCost);
 
@@ -246,23 +243,6 @@ public class Bootstrap implements CommandLineRunner {
                 // Adds the saved purchase order to the po queue
                 if (savedPurchaseOrder.getStatus() == PoStatus.RECEIVED)
                     receivedPurchaseOrders.offer(savedPurchaseOrder);
-                // else {
-                //     // Adding pending GRN
-                //     GoodsReceiptNote goodsReceiptNote = GoodsReceiptNote.builder().date(date)
-                //             .purchaseOrder(savedPurchaseOrder).date(savedPurchaseOrder.getDate()).status(GrnStatus.PENDING).build();
-                //     GoodsReceiptNote savedGoodsReceiptNote = goodsReceiptNoteRepository.save(goodsReceiptNote);
-
-                //     for (PurchaseOrderLine pol : savedPurchaseOrder.getPurchaseOrderLines()) {
-                //         GoodsReceiptNoteLine goodsReceiptNoteLine = GoodsReceiptNoteLine.builder()
-                //                 .goodsReceiptNote(savedGoodsReceiptNote)
-                //                 .qty(pol.getQty()).item(pol.getItem()).build();
-                //         GoodsReceiptNoteLine savedGoodsReceiptNoteLine = goodsReceiptNoteLineRepository
-                //                 .save(goodsReceiptNoteLine);
-                //         savedGoodsReceiptNote.getGoodsReceiptNoteLines().add(savedGoodsReceiptNoteLine);
-                //         savedPurchaseOrder.getGoodsReceiptNotes().add(savedGoodsReceiptNote);
-                //         //purchaseOrderRepository.save(savedPurchaseOrder);
-                //     }
-                // }
             }
         }
 
@@ -283,7 +263,6 @@ public class Bootstrap implements CommandLineRunner {
         List<WarehouseSection> savedWarehouseSections = new ArrayList<>();
 
         StringBuilder builder = new StringBuilder();
-        // int sample = 50, counter = 0;
         // Warehouse section label example: "AA-01-1-A" (AISLE-BAY-SLOT-LEVEL)
         builder.append("AA-01-1-A");
         for (int i = 0; i < AISLES; i++) {
@@ -303,10 +282,6 @@ public class Bootstrap implements CommandLineRunner {
                                 .warehouse(savedWarehouse).build();
                         WarehouseSection savedWarehouseSection = warehouseSectionRepository.save(warehouseSection);
                         savedWarehouseSections.add(savedWarehouseSection);
-                        // if (counter <= sample) {
-                        // System.out.println(section);
-                        // counter++;
-                        // }
                     }
                 }
             }
@@ -318,19 +293,12 @@ public class Bootstrap implements CommandLineRunner {
         // BEFORE PUTTING IT AWAY IN A SPECIFIC WH SECTION
         WarehouseSection floor = WarehouseSection.builder().sectionNumber("00-00-0-0").warehouse(savedWarehouse)
                 .build();
-        // PICKING SECTIONS USUALLY USED TO PLACE THE MERCHADISED PICKED TO BE DELIVERED
-        // TO A CUSTOMER FOR THE ACCOUNTING DEPARTEMENT TO BILL
-        // WarehouseSection picking =
-        // WarehouseSection.builder().sectionNumber("11-11-1-1").warehouse(savedWarehouse).build();
 
         WarehouseSection savedFloorSection = warehouseSectionRepository.save(floor);
         WarehouseSection savedDamagedSection = warehouseSectionRepository.save(damages);
-        // WarehouseSection savedPickingSection =
-        // warehouseSectionRepository.save(picking);
 
         savedWarehouse.getSections().add(savedFloorSection);
         savedWarehouse.getSections().add(savedDamagedSection);
-        // savedWarehouse.getSections().add(savedPickingSection);
 
         // adds Goods receipt notes, goods receipt notes lines to add stock levels in
         // the warehouse

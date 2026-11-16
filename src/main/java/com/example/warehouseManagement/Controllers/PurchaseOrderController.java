@@ -104,7 +104,6 @@ public class PurchaseOrderController {
     @PostMapping(value = NEW_PURCHASE_ORDER_PATH, params = "removeRow")
     public String removePurchaseOrderLine(@ModelAttribute PurchaseOrder purchaseOrder,
             HttpServletRequest request, Model model) {
-        // newpurchaseOrderDto.addOrderLine();
         final int rowId = Integer.valueOf(request.getParameter("removeRow"));
         // Remove the purchase order line based on the row ID
         purchaseOrder.getPurchaseOrderLines().remove(rowId);

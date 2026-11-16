@@ -101,30 +101,6 @@ public interface SalesOrderRepository
         so.date DESC
       """, nativeQuery = true)
     public List<SalesOrder> findAllPendingToShipOrders();
-    /**
-     * Returns a list of all the pending to ship sales order in the dba that matches a given year
-     * @return
-     */
-    @Query(value = """
-      SELECT
-        TO_CHAR(so.date, 'Mon dd, yyyy') AS "date",
-        customer.name as "customer",
-        so.id AS "salesOrder",
-        ROUND(SUM(sales_order_line.qty * item_price.price),2) AS "total",
-        DATEDIFF(DAY,CURRENT_DATE(), date) AS "delay"
-      FROM 
-        SALES_ORDER as so
-        INNER JOIN sales_order_line ON sales_order_line.sales_order_id = so.id
-        INNER JOIN item_price ON sales_order_line.item_price_id = item_price.id
-        INNER JOIN customer on so.customer_id = customer.id
-      WHERE 
-        so.status = 0 AND so.date LIKE CONCAT(:year, '%')
-      GROUP BY 
-        so.id
-      ORDER BY 
-        "date" ASC
-      """, nativeQuery = true)
-    public List<SalesOrder> findAllPendingToShipOrdersByYear(@Param("year") int year);
 
     /**
      * Returns a list of all the pending to ship sales order in the dba that matches a given year and month
@@ -153,7 +129,6 @@ public interface SalesOrderRepository
       ORDER BY 
         "date" ASC;
       """, nativeQuery = true)
-            //SELECT * FROM SALES_ORDER AS so WHERE so.status = 0 AND DATE LIKE '2023%';
     public List<PendingSalesOrderDto> findAllPendingToShipOrdersByYearAndMonth(@Param("year") int year,
          @Param("month") String month);
 

@@ -22,8 +22,6 @@ public interface ShipmentRepository
 
     boolean existsByPickingJobId(Long pickingJobId);
 
-    Optional<Shipment> findByPickingJobId(Long pickingJobId);
-
     List<Shipment> findBySalesOrderIdOrderByCreatedAtAsc(Long salesOrderId);
 
     long countByStatus(ShipmentStatus status);

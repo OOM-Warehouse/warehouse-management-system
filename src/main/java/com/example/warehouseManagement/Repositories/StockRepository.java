@@ -100,79 +100,6 @@ public interface StockRepository extends CrudRepository<Stock, Long> {
 
   public Optional<Stock> findById(Long id);
   
-  // @Modifying
-  // @Transactional
-  // @Query(value = """
-  // SELECT *
-  // FROM (
-  // SELECT
-  // item.sku AS "sku",
-  // item.description as "description",
-  // SUM(sales_order_line.qty) / NULLIF(EXTRACT(WEEK FROM CURRENT_DATE()), 0) as
-  // "averageWeekSales",
-  // NVL((SELECT SUM(s.qty_on_hand) FROM stock s WHERE s.item_id = item.id), 0) as
-  // "qtyOnHand",
-  // NVL(
-  // ROUND(
-  // (SELECT SUM(s.qty_on_hand) FROM stock s WHERE s.item_id = item.id) /
-  // NULLIF(CAST((SUM(sales_order_line.qty) / EXTRACT(WEEK FROM CURRENT_DATE()))
-  // AS REAL), 0),
-  // 2
-  // ),
-  // 0
-  // ) as "weeksOfInventory",
-  // DENSE_RANK() OVER (ORDER BY SUM(sales_order_line.qty) / NULLIF(EXTRACT(WEEK
-  // FROM CURRENT_DATE()), 0) DESC) as "Rank"
-  // FROM sales_order so
-  // INNER JOIN sales_order_line ON sales_order_line.sales_order_id = so.id
-  // INNER JOIN item_price ON sales_order_line.item_id = item_price.item_id
-  // INNER JOIN item ON sales_order_line.item_id = item.id
-  // GROUP BY item.id
-  // ) RankedResults
-  // ORDER BY "Rank" DESC, "qtyOnHand" DESC
-  // LIMIT 5
-  // """, nativeQuery = true)
-  // public List<TopFiveMoversDto> getTopFiveMovers() throws
-  // DataIntegrityViolationException;
-  // @Modifying
-  // @Transactional
-  // @Query(value = """
-  // SELECT TOP 5
-  // item.sku AS "sku",
-  // item.description as "description",
-  // SUM(sales_order_line.qty) / NULLIF(EXTRACT(WEEK FROM CURRENT_DATE()), 0) as
-  // "averageWeekSales",
-  // NVL((SELECT SUM(s.qty_on_hand) FROM stock s WHERE s.item_id = item.id), 0) as
-  // "qtyOnHand",
-  // NVL(
-  // ROUND(
-  // (SELECT SUM(s.qty_on_hand) FROM stock s WHERE s.item_id = item.id) /
-  // NULLIF(CAST((SUM(sales_order_line.qty) / EXTRACT(WEEK FROM CURRENT_DATE()))
-  // AS REAL), 0),
-  // 2
-  // ),
-  // 0
-  // ) as "weeksOfInventory"
-  // FROM sales_order so
-  // INNER JOIN sales_order_line ON sales_order_line.sales_order_id = so.id
-  // INNER JOIN item_price ON sales_order_line.item_id = item_price.item_id
-  // INNER JOIN item ON sales_order_line.item_id = item.id
-  // GROUP BY item.id ORDER BY "averageWeekSales" DESC;
-  // """, nativeQuery = true)
-  // public List<TopFiveMoversDto> getTopFiveMovers() throws
-  // DataIntegrityViolationException;
-
-  // @Query(value = "SELECT \n" +
-  // "s.id, \n" +
-  // "s.warehouse_section_id, \n" +
-  // "s.item_id, \n" +
-  // "s.qty_on_hand \n" +
-  // "FROM stock s\n" + //
-  // "WHERE s.qty_on_hand <= :qty\n" + //
-  // "AND s.item_id = :itemId")
-  // public List<Stock> findByItemIdAndQty(@Param("itemId") Long itemId,
-  // @Param("qty") int qty);
-
   public List<Stock> findByItem(Item item);
 
   @Query(value = """
@@ -232,72 +159,6 @@ public interface StockRepository extends CrudRepository<Stock, Long> {
           GROUP BY item.id""", nativeQuery = true)
   public List<StockLevelReportItemDto> findStockReportsItemsByVendorId(@Param("vendorId") Long vendorId);
 
-  // @Query(value = "SELECT\n" + //
-  // " item.vendor_id AS \"vendorId\",\n" + //
-  // " item.sku as \"sku\",\n" + //
-  // " item.description as \"description\",\n" + //
-  // // AVERAGE WEEKS SALES NESTED QUERY
-  // " (SELECT\n" + //
-  // " SUM(sales_order_line.qty) / EXTRACT(WEEK FROM CURRENT_DATE()) \n" + //
-  // " FROM sales_order so\n" + //
-  // " INNER JOIN sales_order_line ON sales_order_line.sales_order_id = so.id\n" +
-  // //
-  // " INNER JOIN item_price ON sales_order_line.item_id = item_price.item_id\n" +
-  // //
-  // " INNER JOIN item i ON sales_order_line.item_id = i.id\n" + //
-  // " WHERE i.vendor_id = :vendorId\n" + //
-  // " AND i.id = item.id\n" + //
-  // " GROUP BY i.id) as \"averageWeekSales\",\n" + //
-  // " NVL(SUM(s.qty_on_hand),0) as \"qtyOnHand\",\n" + //
-  // // WEEKS OF INVENTORY NESTED QUERY
-  // " (SELECT\n" + //
-  // " NVL(ROUND((SELECT SUM(s.qty_on_hand) FROM stock s WHERE s.item_id = i.id) /
-  // CAST((SUM(sales_order_line.qty) / EXTRACT(WEEK FROM CURRENT_DATE())) AS
-  // REAL),2),0)\n"
-  // + //
-  // " FROM sales_order so\n" + //
-  // " INNER JOIN sales_order_line ON sales_order_line.sales_order_id = so.id\n" +
-  // //
-  // " INNER JOIN item_price ON sales_order_line.item_id = item_price.item_id\n" +
-  // //
-  // " INNER JOIN item i ON sales_order_line.item_id = i.id\n" + //
-  // " WHERE i.vendor_id = :vendorId\n" + //
-  // " AND i.id = item.id\n" + //
-  // " GROUP BY i.id) as \"qtyOnHandWOI\",\n" + //
-  // // QTY IN TRANSIT NESTED QUERY
-  // " (SELECT \n" + //
-  // " SUM(purchase_order_line.qty)\n" + //
-  // " FROM purchase_order po\n" + //
-  // " INNER JOIN purchase_order_line ON purchase_order_line.purchase_order_id =
-  // po.id\n" + //
-  // " INNER JOIN item i ON purchase_order_line.item_id = i.id\n" + //
-  // " WHERE i.vendor_id = item.vendor_id\n" + //
-  // " AND po.status = 1\n" + //
-  // " AND i.id = item.id\n" + //
-  // " GROUP BY i.id) as \"qtyInTransit\",\n" + //
-  // // WEEKS OF INVENTORY NESTED QUERY
-  // " ROUND(CAST((SELECT \n" + //
-  // " SUM(purchase_order_line.qty)\n" + //
-  // " FROM purchase_order po\n" + //
-  // " INNER JOIN purchase_order_line ON purchase_order_line.purchase_order_id =
-  // po.id\n" + //
-  // " INNER JOIN item i ON purchase_order_line.item_id = i.id\n" + //
-  // " WHERE i.vendor_id = item.vendor_id\n" + //
-  // " AND po.status = 1\n" + //
-  // " AND i.id = item.id\n" + // po.status = 1 (IN-TRANSIT)
-  // " GROUP BY i.id)AS REAL) / (SELECT\n" + //
-  // " SUM(sales_order_line.qty) / EXTRACT(WEEK FROM CURRENT_DATE())\n" + //
-  // " FROM sales_order so\n" + //
-  // " INNER JOIN sales_order_line ON sales_order_line.sales_order_id = so.id\n" +
-  // //
-  // " INNER JOIN item i ON i.id = sales_order_line.item_id\n" + //
-  // " WHERE i.id = item.id),2) as \"qtyInTransitWOI\"\n" + //
-  // " FROM stock s\n" + //
-  // " RIGHT JOIN item ON s.item_id = item.id\n" + //
-  // " WHERE item.vendor_id = :vendorId\n" + //
-  // " GROUP BY item.id", nativeQuery = true)
-  // public List<StockLevelReportItemDto>
-  // findStockReportsItemsByVendorId(@Param("vendorId") Long vendorId);
   /*
    * SELECT
    * item.vendor_id AS \"vendorId\",
@@ -385,19 +246,6 @@ public interface StockRepository extends CrudRepository<Stock, Long> {
       """, nativeQuery = true)
   public void updateStockByWarehouseSectionAndItemId(@Param("newQtyOnHand") int newQtyOnHand,
       @Param("warehouseSectionId") Long warehouseSectionId, @Param("itemId") Long itemId);
-
-  @Transactional
-  @Modifying
-  @Query(value = """
-      DELETE 
-        STOCK s
-      WHERE 
-        s.warehouse_section_id = :warehouseSectionId 
-        AND s.item_id = :itemId
-      """, nativeQuery = true)
-  public void deleteStockByWarehouseSectionAndItemId(@Param("warehouseSectionId") Long warehouseSectionId,
-      @Param("itemId") Long itemId);
-
 
 @Query(value = """
       SELECT 

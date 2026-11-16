@@ -66,7 +66,6 @@ public class PickingJobServiceImpl implements PickingJobService {
 
     @Override
     public PickingJob save(PickingJob pickingJob) {
-        // return pickingJobRepository.save(pickingJob);
         PickingJob savedPickingJob = pickingJobRepository.save(pickingJob);
         for (PickingJobLine pickingJobLine : savedPickingJob.getPickingJobLines())
             pickingJobLine.setPickingJob(savedPickingJob);

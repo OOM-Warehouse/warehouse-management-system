@@ -105,7 +105,6 @@ public class SalesOrderController {
     @PostMapping(value = NEW_SALES_ORDER_PATH, params = "removeRow")
     public String removeSaleOrderLine(@ModelAttribute SalesOrder salesOrder,
             HttpServletRequest request, Model model) {
-        // newSalesOrderDto.addOrderLine();
         final int rowId = Integer.valueOf(request.getParameter("removeRow"));
         salesOrder.getSaleOrderLines().remove(rowId);
 
