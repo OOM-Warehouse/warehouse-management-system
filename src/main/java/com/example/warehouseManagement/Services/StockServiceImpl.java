@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.warehouseManagement.Domains.PickingJob;
 import com.example.warehouseManagement.Domains.PickingJobLine;
 import com.example.warehouseManagement.Domains.Stock;
+import com.example.warehouseManagement.Domains.Exceptions.InvalidPickException;
 import com.example.warehouseManagement.Domains.WarehouseSection;
 import com.example.warehouseManagement.Domains.DTOs.InventorySnapshotDto;
 import com.example.warehouseManagement.Domains.DTOs.PutAwayTaskDto;
@@ -41,27 +42,45 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
+    @Transactional
     public void pickStock(PickingJob pickingJob) {
-        for (PickingJobLine pickingJobLine : pickingJob.getPickingJobLines()) {
-            Stock stock = stockRepository.findByWarehouseSectionAndItemId(pickingJobLine.getWarehouseSection().getId(),
-                    pickingJobLine.getItem().getId());
-            if (stock == null)
-                continue; // May happends that a picking job has several lines for same product
-            // and since we are using a form to fullfil the job for simulation purposes
-            // rathern than scanning an
-            // item at the warehouse bin loncation where we can see if a product is
-            // available or not
-            // we need to check if stock is null since it may be deleted by a previous
-            // picked lined and not
-            // available for current picking job line
-            int remainingBalance = stock.getQtyOnHand() - pickingJobLine.getQtyPicked();
-            Long wareHouseSectionId = pickingJobLine.getWarehouseSection().getId();
-            Long itemId = pickingJobLine.getItem().getId();
-            if (remainingBalance > 0) {
-                stockRepository.updateStockByWarehouseSectionAndItemId(remainingBalance, wareHouseSectionId, itemId);
-            } else {
-                stockRepository.deleteStockByWarehouseSectionAndItemId(wareHouseSectionId, itemId);
-            }
+        for (PickingJobLine line : pickingJob.getPickingJobLines()) {
+            if (line.getQtyPicked() <= 0 || line.getWarehouseSection() == null)
+                continue; // nothing was picked on this line
+            decreaseAt(line.getWarehouseSection().getId(), line.getItem().getId(), line.getQtyPicked());
+        }
+    }
+
+    @Override
+    public int availableAt(Long warehouseSectionId, Long itemId) {
+        int total = 0;
+        for (Stock stock : stockRepository.findByWarehouseSectionIdAndItemIdOrderByIdAsc(warehouseSectionId, itemId))
+            total += stock.getQtyOnHand();
+        return total;
+    }
+
+    @Override
+    @Transactional
+    public void decreaseAt(Long warehouseSectionId, Long itemId, int qty) {
+        if (qty < 0)
+            throw new InvalidPickException("Quantity to remove cannot be negative: " + qty);
+        if (qty == 0)
+            return;
+        List<Stock> rows = stockRepository.findByWarehouseSectionIdAndItemIdOrderByIdAsc(warehouseSectionId, itemId);
+        int total = rows.stream().mapToInt(Stock::getQtyOnHand).sum();
+        if (qty > total)
+            throw new InvalidPickException("Insufficient stock: requested " + qty + " but only " + total + " on hand");
+        int remaining = qty;
+        for (Stock row : rows) {
+            if (remaining == 0)
+                break;
+            int take = Math.min(remaining, row.getQtyOnHand());
+            row.decrease(take);
+            remaining -= take;
+            if (row.getQtyOnHand() == 0)
+                stockRepository.delete(row);
+            else
+                stockRepository.save(row);
         }
     }
 

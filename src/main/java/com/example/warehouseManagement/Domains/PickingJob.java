@@ -48,4 +48,12 @@ public class PickingJob {
         PENDING, //0
         FULFILLED //1
     }
+
+    public boolean isPending() {
+        return status == PjStatus.PENDING;
+    }
+
+    public void markFulfilled() {
+        this.status = PjStatus.FULFILLED;
+    }
 }

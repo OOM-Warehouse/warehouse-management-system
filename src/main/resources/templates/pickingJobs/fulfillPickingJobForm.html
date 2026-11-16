@@ -5,6 +5,9 @@
 <div th:insert="~{fragments/navbar :: navbar}"></div>
 
 <div class="container">
+    <div th:if="${param.invalidPick}" class="alert alert-danger mt-3" role="alert">
+        Invalid pick: quantities must be between 0 and the quantity to pick, and at least one unit must be picked.
+    </div>
     <!-- Page headers -->
     <h1 class="my-3 text-center" th:text="|Customer: ${pickingJob.salesOrder.customer.name}|">Customer</h1>
     <!-- Customer list as table -->
@@ -33,6 +36,7 @@
             <tbody>
                 <tr th:each="pickingJobLine, pjStat : ${pickingJob.pickingJobLines}">
                     <th scope="row" th:text="${counter.incrementAndGet()}">1</th>
+                    <input type="hidden" th:field="*{pickingJobDtoLines[__${pjStat.index}__].pickingJobLineId}">
                     <td th:text="${pickingJobLine.item.sku}">101035</td>
                     <td th:text="${pickingJobLine.item.description}">Iphone 14</td>
                     <td th:text="${pickingJobLine.qtyToPick}">3</td>
@@ -59,7 +63,7 @@
                         </select>
                     </td>
                     <td th:if="${warehouseSections[__${pjStat.index}__].size() > 0}">
-                        <input type="number" min="1" step="1"
+                        <input type="number" min="0" th:attr="max=${pickingJobLine.qtyToPick}" step="1"
                             th:field="*{pickingJobDtoLines[__${pjStat.index}__].qtyPicked}" class="form-control"
                             id="qtyPicked" value="1">
                     </td>

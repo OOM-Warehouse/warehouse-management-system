@@ -10,8 +10,11 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 public class PickingJobLineDto {
+    /** Id of the picking job line this entry belongs to (optional; falls back to position). */
+    private Long pickingJobLineId;
     @Builder.Default
     private Long wareHouseSectionId = 0L;
     @Builder.Default
+    @jakarta.validation.constraints.Min(0)
     private int qtyPicked = 0;
 }
