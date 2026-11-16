@@ -265,7 +265,7 @@ public class PurchaseOrderController {
             @PathVariable("orderId") Long id, HttpServletRequest request, Model model) {
         PurchaseOrder order = purchaseOrderService.findById(id).get();
         // Checks if other was already received
-        if (purchaseOrder.getStatus() == PoStatus.RECEIVED) {
+        if (!order.isModifiable()) {
             return "purchaseOrders/cannotBeUpdated";
         }
         final int rowId = Integer.valueOf(request.getParameter("removeRow"));
@@ -314,7 +314,7 @@ public class PurchaseOrderController {
         Optional<PurchaseOrder> order = purchaseOrderService.findById(orderId);
         // If the purchase order is found, deletes it if its status is not received.
         if (order.isPresent()) {
-            if (order.get().getStatus() != PoStatus.RECEIVED) {
+            if (order.get().isModifiable()) {
                 // Deletes the purchase order from the database.
                 purchaseOrderService.delete(order.get());
                 // Redirects to the purchase order list page.

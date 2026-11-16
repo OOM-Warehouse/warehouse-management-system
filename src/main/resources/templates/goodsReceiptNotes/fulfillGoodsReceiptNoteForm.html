@@ -37,7 +37,7 @@
                     <td th:text="${purchaseOrder.purchaseOrderLines[__${grnStat.index}__].item.description}">Iphone 14</td>
                     <td th:text="${purchaseOrder.purchaseOrderLines[__${grnStat.index}__].qty}">3</td>
                     <td>
-                        <input type="number" min="1" step="1"
+                        <input type="number" min="0" step="1"
                             th:field="*{goodsReceiptNoteLines[__${grnStat.index}__].qty}" class="form-control" id="qty"
                             value="1">
                     </td>

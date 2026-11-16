@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:insert="~{fragments/header :: header}"></div>
+<div th:insert="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid px-4 py-3">
+    <div th:if="${param.created}" class="alert alert-success my-3">Shipment created.</div>
+    <div th:if="${param.updated}" class="alert alert-success my-3">Shipment updated.</div>
+    <div th:if="${errorMessage}" class="alert alert-danger my-3" th:text="${errorMessage}">Error</div>
+
+    <div class="d-flex justify-content-between align-items-center my-3">
+        <h1 class="m-0" th:text="|Shipment ${shipment.trackingNumber}|">Shipment</h1>
+        <span class="badge bg-dark fs-6" th:text="${shipment.status.label}">Created</span>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">Details</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Sales order:</strong>
+                        <a th:href="@{/sales-orders/{id}(id=${shipment.salesOrder.id})}" th:text="${shipment.salesOrder.id}">1</a></li>
+                    <li class="list-group-item"><strong>Picking job:</strong>
+                        <a th:href="@{/picking-jobs/{id}(id=${shipment.pickingJob.id})}" th:text="${shipment.pickingJob.id}">1</a></li>
+                    <li class="list-group-item"><strong>Carrier:</strong> <span th:text="${shipment.carrier}">DHL</span></li>
+                    <li class="list-group-item"><strong>Method:</strong> <span th:text="${shipment.shippingMethod}">STANDARD</span></li>
+                    <li class="list-group-item"><strong>Shipping cost:</strong>
+                        <span th:text="${shipment.shippingCost != null} ? ${#numbers.formatCurrency(shipment.shippingCost)} : '—'">—</span></li>
+                    <li class="list-group-item"><strong>Ship to:</strong> <span th:text="${shipment.shipToAddress} ?: '—'">—</span></li>
+                    <li class="list-group-item"><strong>Units:</strong> <span th:text="${shipment.totalUnits}">0</span></li>
+                    <li class="list-group-item"><strong>Expected delivery:</strong>
+                        <span th:text="${shipment.expectedDeliveryDate != null} ? ${#temporals.format(shipment.expectedDeliveryDate, 'MMM dd, yyyy')} : '—'">—</span></li>
+                    <li class="list-group-item"><strong>Created:</strong>
+                        <span th:text="${#temporals.format(shipment.createdAt, 'MMM dd, yyyy HH:mm')}"></span></li>
+                    <li class="list-group-item"><strong>Dispatched:</strong>
+                        <span th:text="${shipment.dispatchedAt != null} ? ${#temporals.format(shipment.dispatchedAt, 'MMM dd, yyyy HH:mm')} : '—'">—</span></li>
+                    <li class="list-group-item"><strong>Delivered:</strong>
+                        <span th:text="${shipment.deliveredAt != null} ? ${#temporals.format(shipment.deliveredAt, 'MMM dd, yyyy HH:mm')} : '—'">—</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">Update status</div>
+                <div class="card-body" th:if="${nextStatuses.isEmpty()}">
+                    <span class="text-muted">This shipment is <span th:text="${shipment.status.label}"></span> and can no longer change.</span>
+                </div>
+                <form th:unless="${nextStatuses.isEmpty()}" th:action="@{/shipments/{id}/status(id=${shipment.id})}"
+                      th:object="${statusUpdate}" method="post" class="card-body row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label">New status</label>
+                        <select class="form-select" th:field="*{status}" required>
+                            <option th:each="s : ${nextStatuses}" th:value="${s}" th:text="${s.label}">Packed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-control" th:field="*{location}" maxlength="255">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Note</label>
+                        <input type="text" class="form-control" th:field="*{note}" maxlength="500">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Occurred at <span class="text-muted small">(optional, default now)</span></label>
+                        <input type="datetime-local" class="form-control" th:field="*{occurredAt}">
+                    </div>
+                    <div class="col-12"><button type="submit" class="btn btn-dark">Update</button></div>
+                </form>
+            </div>
+
+            <div class="card shadow-sm" th:if="${shipment.status.name() == 'CREATED' or shipment.status.name() == 'PACKED'}">
+                <div class="card-header">Assign carrier / tracking number</div>
+                <form th:action="@{/shipments/{id}/carrier(id=${shipment.id})}" method="post" class="card-body row g-2">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="carrier" th:value="${shipment.carrier}" maxlength="64" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="trackingNumber" th:value="${shipment.trackingNumber}" maxlength="32">
+                    </div>
+                    <div class="col-12"><button type="submit" class="btn btn-outline-dark">Save</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="h4 mt-4">Tracking history</h2>
+    <div th:replace="~{shipments/track :: timeline(${shipment})}"></div>
+
+    <div class="my-3">
+        <a th:href="@{/shipments}" class="btn btn-outline-secondary col-12">Back</a>
+    </div>
+</div>
+
+<div th:insert="~{fragments/footer :: footer}"></div>
+</html>

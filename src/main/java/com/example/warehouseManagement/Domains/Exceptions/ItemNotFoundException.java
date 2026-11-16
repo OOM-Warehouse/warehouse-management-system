@@ -1,6 +1,6 @@
 package com.example.warehouseManagement.Domains.Exceptions;
 
-public class ItemNotFoundException extends Exception {
+public class ItemNotFoundException extends ResourceNotFoundException {
     public ItemNotFoundException(String message) {
         super(message);
     }

@@ -401,7 +401,7 @@ public class Bootstrap implements CommandLineRunner {
                         .build();
                 PickingJob savedPickingJob = pickingJobRepository.save(pickingJob);
                 if (savedSalesOrder.getStatus() == SoStatus.SHIPPED)
-                    pickingJob.setStatus(PjStatus.FULFILLED);
+                    pickingJob.markFulfilled();
                 for (SalesOrderLine salesOrderLine : savedSalesOrder.getSaleOrderLines()) {
                     PickingJobLine pickingJobLine = PickingJobLine.builder().item(salesOrderLine.getItem())
                             .qtyToPick(salesOrderLine.getQty()).pickingJob(savedPickingJob).build();
@@ -423,7 +423,7 @@ public class Bootstrap implements CommandLineRunner {
                         List<Stock> stocks = stockRepository.findByItem(sol.getItem());
                         for (Stock stock : stocks) {
                             if (stock.getQtyOnHand() > ordered) {
-                                stock.setQtyOnHand(stock.getQtyOnHand() - ordered);
+                                stock.decrease(ordered, "seed data shipped order");
                                 stockRepository.save(stock);
                                 picked += ordered;
                                 break;

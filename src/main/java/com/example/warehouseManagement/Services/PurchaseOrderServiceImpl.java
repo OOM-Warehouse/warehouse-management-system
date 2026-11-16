@@ -168,7 +168,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             throw new PurchaseOrderNotFoundException();
         } else {
             PurchaseOrder existing = purchaseOrderRepository.findById(id).get();
-            if (existing.getStatus() == PoStatus.RECEIVED) {
+            if (!existing.isModifiable()) {
                 throw new ReceivedOrderModificationException();
             }
 
@@ -195,9 +195,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                     Long newItemId = purchaseOrder.getPurchaseOrderLines().get(i).getItem().getId();
                     int qty = purchaseOrder.getPurchaseOrderLines().get(i).getQty();
                     Item modifiedItem = itemRepository.findById(newItemId).get();
-                    PurchaseOrderLine newpurchaseOrderLine = PurchaseOrderLine.builder().item(modifiedItem)
-                        .itemCost(itemCostRepository.findCurrentItemCostByItemId(newItemId))
-                        .qty(qty).purchaseOrder(existing).build();
+                    // addLine keeps both sides of the order <-> line association in sync
+                    PurchaseOrderLine newpurchaseOrderLine = existing.addLine(modifiedItem, qty,
+                        itemCostRepository.findCurrentItemCostByItemId(newItemId));
                     purchaseOrderLineRepository.save(newpurchaseOrderLine);
                 }
             }
@@ -223,12 +223,12 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             // Adding Goods receipt lines
             GoodsReceiptNoteLine goodsReceiptNoteLine = GoodsReceiptNoteLine.builder()
                     .goodsReceiptNote(savedGoodsReceiptNote)
-                    .qty(pol.getQty()).item(pol.getItem()).build();
+                    .qty(0).item(pol.getItem()).build();
             GoodsReceiptNoteLine savedGoodsReceiptNoteLine = goodsReceiptNoteLineRepository
                     .save(goodsReceiptNoteLine);
             savedGoodsReceiptNote.getGoodsReceiptNoteLines().add(savedGoodsReceiptNoteLine);
-            po.getGoodsReceiptNotes().add(savedGoodsReceiptNote);
         }
+        po.getGoodsReceiptNotes().add(savedGoodsReceiptNote);
         goodsReceiptNoteRepository.save(savedGoodsReceiptNote);
         purchaseOrderLineRepository.saveAll(po.getPurchaseOrderLines());
         return purchaseOrderRepository.save(po);
