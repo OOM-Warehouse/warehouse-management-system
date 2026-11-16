@@ -34,6 +34,10 @@
     </table>
 </div>
 
+<div class="container my-3" th:if="${pickingJob.status.name() == 'FULFILLED'}">
+    <a th:href="@{/shipments/new(pickingJobId=${pickingJob.id})}"
+        class="btn btn-dark col-12 mb-2"><i class="bi bi-truck-flatbed me-1"></i>Create shipment</a>
+</div>
 <div class="container my-3">
     <a th:href="@{/picking-jobs}"
         class="btn btn-outline-secondary col-12">Back</a>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:insert="~{fragments/header :: header}"></div>
+<div th:insert="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid px-4 py-3" style="max-width: 720px;">
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}">Error</div>
+
+    <h1 class="my-3">New Shipment</h1>
+
+    <form th:action="@{/shipments/new}" th:object="${shipment}" method="post" class="card shadow-sm">
+        <div class="card-body row g-3">
+            <div class="col-12">
+                <label class="form-label">Fulfilled picking job</label>
+                <select class="form-select" th:field="*{pickingJobId}" required>
+                    <option value="" disabled selected>— pick a picking job —</option>
+                    <option th:each="pj : ${pickingJobs}" th:value="${pj.id}"
+                            th:text="|Job ${pj.id} — order ${pj.salesOrder.id} (${pj.salesOrder.customer.name})|">Job 1</option>
+                </select>
+                <div class="form-text" th:if="${pickingJobs.isEmpty()}">No fulfilled picking jobs are waiting for a shipment.</div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('pickingJobId')}" th:errors="*{pickingJobId}"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Carrier</label>
+                <input type="text" class="form-control" th:field="*{carrier}" maxlength="64" required>
+                <div class="text-danger small" th:if="${#fields.hasErrors('carrier')}" th:errors="*{carrier}"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tracking number <span class="text-muted small">(blank = generate)</span></label>
+                <input type="text" class="form-control" th:field="*{trackingNumber}" maxlength="32">
+                <div class="text-danger small" th:if="${#fields.hasErrors('trackingNumber')}" th:errors="*{trackingNumber}"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Shipping method</label>
+                <select class="form-select" th:field="*{shippingMethod}">
+                    <option th:each="m : ${methods}" th:value="${m}" th:text="${m}">STANDARD</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Expected delivery date</label>
+                <input type="date" class="form-control" th:field="*{expectedDeliveryDate}">
+                <div class="text-danger small" th:if="${#fields.hasErrors('expectedDeliveryDate')}" th:errors="*{expectedDeliveryDate}"></div>
+            </div>
+        </div>
+        <div class="card-footer d-flex gap-2">
+            <button type="submit" class="btn btn-dark">Create shipment</button>
+            <a class="btn btn-outline-secondary" th:href="@{/shipments}">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<div th:insert="~{fragments/footer :: footer}"></div>
+</html>
