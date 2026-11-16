@@ -44,7 +44,6 @@ Layered: Controllers -> Services (interface + Impl) -> Repositories -> Entities.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): layers, workflows, patterns.
 - [docs/TESTING.md](docs/TESTING.md): test strategy and how to run.
 - [docs/RELATIONSHIPS.md](docs/RELATIONSHIPS.md): association, aggregation, composition.
-- [docs/audit/](docs/audit/): repository audits and implementation plan.
 
 ## UML diagrams
 
@@ -194,7 +193,7 @@ src/main/java/com/example/warehouseManagement/
   Util/, DSA/    helpers (Counter, Trie, BinarySearchTree)
 src/main/resources/  application.properties, db/ (Flyway), templates/
 src/test/java/...    unit, repository and controller tests
-docs/                documentation, screenshots, audits, uml/
+docs/                documentation, screenshots, uml/
 ```
 
 ## Testing

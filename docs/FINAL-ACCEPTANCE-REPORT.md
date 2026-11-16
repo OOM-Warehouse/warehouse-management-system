@@ -2,7 +2,7 @@
 
 Build: `mvn -o test` gives 113 tests, 0 failures, BUILD SUCCESS. `pom.xml` is identical to `3143c03` (no new dependencies). Remaining `TODO` comments in `src/main` are four feature notes (`Bootstrap`, `ItemController` x2, `PurchaseOrderController`, `SalesOrderServiceImpl`); none is a stub.
 
-Fix made in this audit: the UML diagrams lived only on branch `claude/spring-warehouse-refactor-b6ffc5`; `docs/uml/` is now on `main`. All class names in `class-diagram.puml` exist in `src/main` (checked with a script). `docs/uml/DISCREPANCIES.md` is accurate for `main`.
+Check: All class names in `class-diagram.puml` exist in `src/main` (checked with a script). `docs/uml/DISCREPANCIES.md` is accurate for `main`.
 
 | # | Requirement | Result | Evidence |
 |---|---|---|---|
