@@ -179,7 +179,7 @@ public class GoodsReceiptNoteImpl implements GoodsReceiptNoteService {
             goodsReceiptNoteLineRepository.save(line);
             if (qty > 0) addToFloorStock(line.getItem(), floor, qty);
         }
-        goodsReceiptNote.setStatus(GrnStatus.FULFILLED);
+        goodsReceiptNote.markFulfilled();
         GoodsReceiptNote saved = goodsReceiptNoteRepository.save(goodsReceiptNote);
 
         // 3. Derive the PO status from cumulative quantities (not from line counts)
@@ -191,7 +191,7 @@ public class GoodsReceiptNoteImpl implements GoodsReceiptNoteService {
                 break;
             }
         }
-        purchaseOrder.setStatus(complete ? PoStatus.RECEIVED : PoStatus.PARTIALLY_RECEIVED);
+        if (complete) purchaseOrder.markReceived(); else purchaseOrder.markPartiallyReceived();
         if (!complete) findOrCreatePending(purchaseOrder);
         return saved;
     }
@@ -224,7 +224,7 @@ public class GoodsReceiptNoteImpl implements GoodsReceiptNoteService {
                         && Objects.equals(s.getWarehouseSection().getId(), floor.getId()))
                 .findFirst()
                 .orElseGet(() -> Stock.builder().item(item).warehouseSection(floor).qtyOnHand(0).build());
-        stock.setQtyOnHand(stock.getQtyOnHand() + qty);
+        stock.increase(qty);
         stockRepository.save(stock);
     }
 

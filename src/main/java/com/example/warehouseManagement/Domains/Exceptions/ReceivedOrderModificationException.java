@@ -1,6 +1,6 @@
 package com.example.warehouseManagement.Domains.Exceptions;
 
-public class ReceivedOrderModificationException extends Exception {
+public class ReceivedOrderModificationException extends OrderModificationException {
     public ReceivedOrderModificationException(String message) {
         super(message);
     }

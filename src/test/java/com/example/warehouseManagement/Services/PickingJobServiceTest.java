@@ -99,6 +99,14 @@ class PickingJobServiceTest {
         return dto;
     }
 
+    /** Jobs of this test's order only: the shared in-memory DB may hold seed data from other contexts. */
+    private List<PickingJob> jobsOfOrder() {
+        em.flush();
+        return pickingJobRepository.findAll().stream()
+                .filter(j -> j.getSalesOrder() != null && j.getSalesOrder().getId().equals(salesOrder.getId()))
+                .toList();
+    }
+
     private int onHand(WarehouseSection bin, Item item) {
         em.flush();
         em.clear();
@@ -123,7 +131,7 @@ class PickingJobServiceTest {
         assertThat(result.getPickingJobLines().get(0).getQtyPicked()).isEqualTo(4);
         assertThat(onHand(bin1, itemA)).isEqualTo(6);
         assertThat(backorders()).isEmpty();
-        assertThat(pickingJobRepository.count()).isEqualTo(1);
+        assertThat(jobsOfOrder().size()).isEqualTo(1);
     }
 
     @Test
@@ -138,7 +146,7 @@ class PickingJobServiceTest {
 
         assertThat(job.getStatus()).isEqualTo(PjStatus.PENDING);
         assertThat(backorders()).isEmpty();
-        assertThat(pickingJobRepository.count()).isEqualTo(1);
+        assertThat(jobsOfOrder().size()).isEqualTo(1);
     }
 
     @Test
@@ -155,7 +163,7 @@ class PickingJobServiceTest {
         List<Backorder> bos = backorders();
         assertThat(bos).hasSize(1);
         assertThat(bos.get(0).getQty()).isEqualTo(6);
-        List<PickingJob> jobs = pickingJobRepository.findAll();
+        List<PickingJob> jobs = jobsOfOrder();
         assertThat(jobs).hasSize(2);
         PickingJob backorderJob = jobs.stream().filter(PickingJob::isPending).findFirst().orElseThrow();
         assertThat(backorderJob.getPickingJobLines()).hasSize(1);
@@ -194,7 +202,7 @@ class PickingJobServiceTest {
         assertThat(bos).extracting(b -> b.getItem().getSku(), Backorder::getQty)
                 .containsExactlyInAnyOrder(tuple(2, 4), tuple(3, 3));
         // one single follow-up picking job for all remainders
-        assertThat(pickingJobRepository.findAll()).hasSize(2);
+        assertThat(jobsOfOrder()).hasSize(2);
     }
 
     @Test
@@ -211,7 +219,7 @@ class PickingJobServiceTest {
         List<Backorder> bos = backorders();
         assertThat(bos).hasSize(1);
         assertThat(bos.get(0).getQty()).isEqualTo(6);
-        assertThat(pickingJobRepository.count()).isEqualTo(2);
+        assertThat(jobsOfOrder().size()).isEqualTo(2);
     }
 
     @Test
@@ -248,7 +256,7 @@ class PickingJobServiceTest {
         pickingJobService.fulfill(job, dto(job, bin1, 10));
         em.flush();
         em.clear();
-        PickingJob backorderJob = pickingJobRepository.findAll().stream()
+        PickingJob backorderJob = jobsOfOrder().stream()
                 .filter(PickingJob::isPending).findFirst().orElseThrow();
         stock(bin1, itemA, 20);
         em.flush();
@@ -257,7 +265,7 @@ class PickingJobServiceTest {
 
         assertThat(backorders()).isEmpty();
         assertThat(onHand(bin1, itemA)).isEqualTo(14);
-        assertThat(pickingJobRepository.count()).isEqualTo(2);
+        assertThat(jobsOfOrder().size()).isEqualTo(2);
     }
 
     @Test

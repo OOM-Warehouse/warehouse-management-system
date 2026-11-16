@@ -146,12 +146,12 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             throw new SalesOrderNotFoundException();
         } else {
             SalesOrder existing = salesOrderRepository.findById(id).get();
-            if (existing.getStatus() == SoStatus.SHIPPED) {
+            if (!existing.isModifiable()) {
                 throw new ShippedOrderModificationException();
             }
             // Check if backorders were delete, if so mark order as shipped
             if (existing.getBackorders().size() == 0 && existing.getStatus() == SoStatus.PARTIALLY_SHIPPED) {
-                existing.setStatus(SoStatus.SHIPPED);
+                existing.markShipped();
             }
             // Business Rules -> Only allow sales order modification on customer (for
             // clients with differents corporations or that changed corporation)
@@ -181,9 +181,9 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                     Long newItemId = salesOrder.getSaleOrderLines().get(i).getItem().getId();
                     int qty = salesOrder.getSaleOrderLines().get(i).getQty();
                     Item modifiedItem = itemRepository.findById(newItemId).get();
-                    SalesOrderLine newSalesOrderLine = SalesOrderLine.builder().item(modifiedItem)
-                        .itemPrice(itemPriceRepository.findCurrentItemPriceByItemId(newItemId))
-                        .qty(qty).salesOrder(existing).build();
+                    // addLine keeps both sides of the order <-> line association in sync
+                    SalesOrderLine newSalesOrderLine = existing.addLine(modifiedItem, qty,
+                        itemPriceRepository.findCurrentItemPriceByItemId(newItemId));
                     salesOrderLineRepository.save(newSalesOrderLine);
                 }
             }

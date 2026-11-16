@@ -12,53 +12,40 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-@Data
-@AllArgsConstructor
+/**
+ * A buyer. Name and address come from {@link Party}.
+ *
+ * Relationships: a customer places sales orders and is billed with invoices. Both are plain associations:
+ * they are separate business documents that must be kept even if the customer record changes, so removal
+ * never cascades from the customer.
+ */
+@Getter
+@Setter
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name="customer")
-public class Customer {
+public class Customer extends Party {
+    // id keeps its setter: the customer update form binds the id of the customer being edited
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
     private Long id;
-    @Column(name = "name")
-    private String name;
-    @Column(name = "street")
-    private String street;
-    @Column(name = "city")
-    private String city;
-    @Column(name = "state")
-    private String state;
-    @Column(name = "zipcode")
-    private String zipcode;
-    @Column(name = "contact_info")
-    private String contactInfo;
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY) //Fetch when needed
-    @Column(name = "invoices")
+    @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @Builder.Default
-    List<Invoice> invoices = new ArrayList<>();
-     //Specify the field in the sales order table to map the relationship with
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY) //Fetch when needed
-    @Column(name = "sales_orders")
+    private List<Invoice> invoices = new ArrayList<>();
+    @OneToMany(mappedBy = "customer", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @Builder.Default
-    List<SalesOrder> salesOrders = new ArrayList<>();
+    private List<SalesOrder> salesOrders = new ArrayList<>();
 
-    @Column(name = "formatted_address")
-    public String formattedAddress() {
-        return "%s %s, %s, %s".formatted(street, city, state, zipcode);
+    @Override
+    public String getPartyType() {
+        return "Customer";
     }
 }
-
-//MANY TO MANY RELATIONSHIP ANNOTATION
-/**
- * @ManyToMany
-    @JoinTable(name="CUSTOMER_SALEORDER", joinColumns = @JoinColumn(name="CUSTOMER_ID"), 
-        inverseJoinColumns = @JoinColumn(name="SALEORDER_ID"))
- */

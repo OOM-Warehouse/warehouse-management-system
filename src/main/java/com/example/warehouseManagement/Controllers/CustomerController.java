@@ -170,7 +170,7 @@ public class CustomerController {
         }
 
         // Check if the customer has associated invoices.
-        if (customer.get().getInvoices().size() > 0) {
+        if (!customer.get().getInvoices().isEmpty() || !customer.get().getSalesOrders().isEmpty()) {
             return "redirect:/customers?failedToDelete"; // Redirect to the list of customers with a failure message.
         }
 

@@ -269,7 +269,7 @@ public class SalesOrderController {
             @PathVariable("orderId") Long id, HttpServletRequest request, Model model) {
         SalesOrder order = salesOrderService.findById(id).get();
         // Checks if other was already shipped
-        if (salesOrder.getStatus() == SoStatus.SHIPPED) {
+        if (!order.isModifiable()) {
             return "salesOrders/cannotBeUpdated";
         }
         final int rowId = Integer.valueOf(request.getParameter("removeRow"));
@@ -320,10 +320,10 @@ public class SalesOrderController {
         Optional<SalesOrder> order = salesOrderService.findById(orderId);
         // If the sales order is found and is not shipped, delete it and redirect to the
         // sales orders list page.
-        if (order.isPresent() && order.get().getStatus() != SoStatus.SHIPPED) {
+        if (order.isPresent() && order.get().isModifiable()) {
             salesOrderService.delete(order.get());
             return "redirect:/sales-orders?salesOrderDeleted";
-        } else if (order.get().getStatus() == SoStatus.SHIPPED) {
+        } else if (order.isPresent()) {
             return "redirect:/sales-orders?failedToDelete";
         } else {
             return "redirect:/sales-orders/?notFound";

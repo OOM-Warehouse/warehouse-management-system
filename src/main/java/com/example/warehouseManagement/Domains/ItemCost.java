@@ -18,10 +18,12 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -35,7 +37,7 @@ public class ItemCost {
     @ManyToOne
     @JoinColumn(name = "item_id")
     private Item item;
-    @OneToMany(mappedBy = "itemCost", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "itemCost", fetch = FetchType.LAZY)
     @Column(name = "purchase_order_line_id")
     @Builder.Default
     private List<PurchaseOrderLine> purchaseOrderLine = new ArrayList<>();

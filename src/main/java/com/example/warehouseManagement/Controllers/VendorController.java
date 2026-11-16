@@ -170,7 +170,7 @@ public class VendorController {
         }
 
         // Check if the vendor has associated purchase orders.
-        if (vendor.get().getPurchaseOrders().size() > 0) {
+        if (!vendor.get().getPurchaseOrders().isEmpty() || !vendor.get().getItems().isEmpty()) {
             return "redirect:/vendors?failedToDelete"; // Redirect to the list of vendors with a failure message.
         }
 

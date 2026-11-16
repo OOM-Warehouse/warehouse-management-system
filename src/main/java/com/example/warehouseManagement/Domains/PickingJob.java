@@ -17,10 +17,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -30,6 +33,7 @@ public class PickingJob {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
+    @Setter(AccessLevel.NONE)
     private Long id;
     @Builder.Default
     @Column(name = "date")
@@ -44,6 +48,23 @@ public class PickingJob {
     @Builder.Default
     private PjStatus status = PjStatus.PENDING;
 
+    /** Marks the job as fulfilled. A fulfilled job is final. */
+    public void markFulfilled() {
+        if (status == PjStatus.FULFILLED) {
+            throw new IllegalStateException("Picking job " + id + " is already fulfilled");
+        }
+        this.status = PjStatus.FULFILLED;
+    }
+
+    /** Adds a line and keeps both sides of the association in sync. */
+    public void addLine(PickingJobLine line) {
+        if (line == null) {
+            throw new IllegalArgumentException("Line must not be null");
+        }
+        line.setPickingJob(this);
+        pickingJobLines.add(line);
+    }
+
     public enum PjStatus {
         PENDING, //0
         FULFILLED //1
@@ -51,9 +72,5 @@ public class PickingJob {
 
     public boolean isPending() {
         return status == PjStatus.PENDING;
-    }
-
-    public void markFulfilled() {
-        this.status = PjStatus.FULFILLED;
     }
 }

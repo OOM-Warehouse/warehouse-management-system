@@ -1,6 +1,6 @@
 package com.example.warehouseManagement.Domains.Exceptions;
 
-public class ItemPriceNotFoundException extends Exception {
+public class ItemPriceNotFoundException extends ResourceNotFoundException {
     public ItemPriceNotFoundException(String message) {
         super(message);
     }
