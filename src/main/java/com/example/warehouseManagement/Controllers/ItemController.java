@@ -184,7 +184,12 @@ public class ItemController {
         // Check if the item has associated goods receipt note lines since an item first
         // has to be received in a warehouse before sell it to customer, thus is an item
         // has been received we should not deleted unless DBA and management agree to it.
-        if (item.get().getGoodsReceiptNoteLines().size() > 0) {
+        Item found = item.get();
+        // Order lines no longer cascade from the item (they belong to their orders), so an item still
+        // referenced by any order, picking, invoice or backorder line must not be deleted either.
+        if (!found.getGoodsReceiptNoteLines().isEmpty() || !found.getPurchaseOrderLines().isEmpty()
+                || !found.getSalesOrderLines().isEmpty() || !found.getPickingJobLines().isEmpty()
+                || !found.getInvoiceLines().isEmpty() || !found.getBackorders().isEmpty()) {
             return "redirect:/items?failedToDelete"; // Redirect to the list of items with a failure message.
         }
 

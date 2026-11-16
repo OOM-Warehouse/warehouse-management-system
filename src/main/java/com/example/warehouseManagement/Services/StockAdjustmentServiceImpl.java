@@ -53,7 +53,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
             stockRepository.save(Stock.builder()
                     .item(adj.getItem()).warehouseSection(section).qtyOnHand(qty).build());
         } else {
-            stock.setQtyOnHand(qty);
+            stock.setCountedQty(qty);
             stockRepository.save(stock);
         }
     }
@@ -76,7 +76,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         if (remaining == 0) {
             stockRepository.delete(here);
         } else {
-            here.setQtyOnHand(remaining);
+            here.decrease(qty, "stock adjustment");
             stockRepository.save(here);
         }
     }
@@ -88,7 +88,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
             stockRepository.save(Stock.builder()
                     .item(adj.getItem()).warehouseSection(section).qtyOnHand(qty).build());
         } else {
-            stock.setQtyOnHand(stock.getQtyOnHand() + qty);
+            stock.increase(qty, "stock adjustment");
             stockRepository.save(stock);
         }
     }

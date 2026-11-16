@@ -16,10 +16,12 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -45,27 +47,27 @@ public class Item {
     @Column(name = "item_costs")
     @Builder.Default
     private List<ItemCost> itemCosts = new ArrayList<>();
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     @Column(name = "goods_receipt_note_lines")
     @Builder.Default
     private List<GoodsReceiptNoteLine> goodsReceiptNoteLines = new ArrayList<>();
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     @Column(name = "sales_order_lines")
     @Builder.Default
     private List<SalesOrderLine> salesOrderLines = new ArrayList<>();
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     @Column(name = "purchase_order_lines")
     @Builder.Default
     private List<PurchaseOrderLine> purchaseOrderLines = new ArrayList<>();
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     @Column(name = "picking_job_lines")
     @Builder.Default
     private List<PickingJobLine> pickingJobLines = new ArrayList<>();
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     @Column(name = "invoice_lines")
     @Builder.Default
     private List<InvoiceLine> invoiceLines = new ArrayList<>();
-    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "item", fetch = FetchType.LAZY)
     @Column(name = "backorders")
     @Builder.Default
     private List<Backorder> backorders = new ArrayList<>();

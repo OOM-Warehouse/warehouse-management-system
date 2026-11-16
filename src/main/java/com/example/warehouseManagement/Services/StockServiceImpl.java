@@ -117,7 +117,7 @@ public class StockServiceImpl implements StockService {
                         .qtyOnHand(qtyMoved)
                         .warehouseSection(destination.get())
                         .build();
-                    movedStock.get().setQtyOnHand(movedStock.get().getQtyOnHand() - qtyMoved);
+                    movedStock.get().decrease(qtyMoved, "put-away split to " + destination.get().getSectionNumber());
                     stockRepository.save(movedStock.get());
                     stockRepository.save(newStock);
                 }

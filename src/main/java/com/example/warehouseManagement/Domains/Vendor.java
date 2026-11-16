@@ -12,45 +12,39 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-@Data
-@AllArgsConstructor
+/**
+ * A supplier. Name and address come from {@link Party}.
+ *
+ * Relationships: a vendor supplies items (aggregation: items are catalogue entries that outlive the vendor
+ * record, so removal never cascades) and receives purchase orders (association).
+ */
+@Getter
+@Setter
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table(name="vendor")
-public class Vendor {
+public class Vendor extends Party {
+    // id keeps its setter: the vendor update form binds the id of the vendor being edited
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
     private Long id;
-    @Column(name = "name")
-    private String name;
-    @Column(name = "street")
-    private String street;
-    @Column(name = "city")
-    private String city;
-    @Column(name = "state")
-    private String state;
-    @Column(name = "zipcode")
-    private String zipcode;
-    @Column(name = "contact_info")
-    private String contactInfo;
-    @OneToMany(mappedBy = "vendor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Column(name = "items")
+    @OneToMany(mappedBy = "vendor", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Item> items = new ArrayList();
-    @OneToMany(mappedBy = "vendor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Column(name = "purchase_orders")
+    private List<Item> items = new ArrayList<>();
+    @OneToMany(mappedBy = "vendor", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @Builder.Default
     private List<PurchaseOrder> purchaseOrders = new ArrayList<>();
-    @Column(name = "formatted_address")
-    public String formattedAddress() {
-        return "%s %s, %s, %s".formatted(street, city, state, zipcode);
-    }
 
+    @Override
+    public String getPartyType() {
+        return "Vendor";
+    }
 }

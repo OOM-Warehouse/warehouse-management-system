@@ -130,10 +130,10 @@ public class GoodsReceiptNoteImpl implements GoodsReceiptNoteService {
         if (receivedPurchaseOrderLines == 0) return null;
 
         else if (receivedPurchaseOrderLines < purchaseOrderLines) {
-            purchaseOrder.setStatus(PoStatus.PARTIALLY_RECEIVED);
+            purchaseOrder.markPartiallyReceived();
         }
-        purchaseOrder.setStatus(PoStatus.RECEIVED);
-        goodsReceiptNote.setStatus(GrnStatus.FULFILLED);
+        purchaseOrder.markReceived();
+        goodsReceiptNote.markFulfilled();
         return goodsReceiptNoteRepository.save(goodsReceiptNote);
     }
 

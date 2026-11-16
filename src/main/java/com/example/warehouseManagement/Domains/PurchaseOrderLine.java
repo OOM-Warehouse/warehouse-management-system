@@ -10,19 +10,23 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name = "purchase_order_line")
-public class PurchaseOrderLine {
+public class PurchaseOrderLine implements OrderLine {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
+    @Setter(AccessLevel.NONE)
     private Long id;
     @ManyToOne
     @JoinColumn(name = "purchase_order_id") //Foreign key mapp to po entity
